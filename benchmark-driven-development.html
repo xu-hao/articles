@@ -1,32 +1,28 @@
-<html><head><meta charset="utf-8"><title>TDD Doesn&#39;t Work on LLM Code. Here&#39;s What Does.</title><style>body{max-width:42em;margin:2em auto;font-family:Georgia,serif;line-height:1.6}pre{background:#f4f4f4;padding:1em;overflow-x:auto;font-size:14px}code{font-family:monospace}</style></head><body><h1>TDD Doesn't Work on LLM Code. Here's What Does.</h1>
-<h2>Benchmark-driven development: red is a fraction, green is a bar you pick, and "cannot reproduce" stops being an acceptable resolution.</h2>
-<p>I've been writing tests the same way for a long time. Red, green, refactor. It's muscle memory at this point, and it has survived every stack I've thrown at it.</p>
-<p>Then we shipped a feature with an LLM call in the middle of it, and my muscle memory started lying to me.</p>
-<h2>The ticket I closed wrong</h2>
-<p>A support-triage bot misrouted a customer email. The message was <em>"my card was charged twice"</em> — any human files that under billing in half a second. The bot put it in <em>other</em>, where it sat in the wrong queue for two days until the customer followed up, angrier.</p>
-<p>I did what you do. Copied the exact message into a playground, ran it. Right answer. Ran it again. Right answer again. I stared at it for a minute, wrote <em>cannot reproduce</em> on the ticket, and moved on. I want to be honest here: it didn't even feel sloppy at the time. That's the standard procedure for a bug you can't trigger.</p>
-<p>Three weeks later it happened again. Different email, same shape.</p>
-<p>The thing I eventually had to sit with is that there was never a bug that "happens on this input." There was a prompt that fails on this input maybe forty percent of the time, and production had been quietly rolling that die all month. My two playground runs were two lucky rolls. I closed a ticket on the strength of a coin landing heads twice.</p>
-<h2>One run is a sample, not a result</h2>
-<p>Here's the test I would have written for that bot, back when I still trusted my instincts:</p>
-<pre><code class="language-python">def test_triage():
-    assert triage(&quot;my card was charged twice&quot;) == &quot;billing&quot;
-</code></pre>
-<p>For a parser, this is proof. For a model call it's a sample — literally one draw from a distribution. If the true success rate on that input is 70%, the test goes green seven runs out of ten. And if your CI retries flaky tests (ours did), it goes green 91% of the time. Congratulations: you've built a machine for hiding exactly the number you needed to see.</p>
-<p>A test that passes seven times out of ten is not a passing test. It's a probability, and your tooling is rounding it to <code>True</code>.</p>
-<h2>Swapping the instrument</h2>
-<p>The fix I landed on — after prompt tweaks, temperature 0, and a certain amount of denial — wasn't a better prompt. It was a better instrument. Keep the TDD loop. Change what red and green mean.</p>
+<html><head><meta charset="utf-8"><style>body{max-width:42em;margin:2em auto;font-family:Georgia,serif;line-height:1.6}pre{background:#f4f4f4;padding:1em;overflow-x:auto;font-size:14px}code{font-family:monospace}</style></head><body><h1>TDD Doesn't Work on LLM Code. Here's What Does.</h1>
+<h2>Benchmark-Driven Development: red is a fraction, green is a probability bar, and "cannot reproduce" stops being a resolution.</h2>
+<p>Test-driven development is the best feedback loop our industry ever built. Write a failing test, make it pass, refactor with a safety net, keep the test forever. Red, green, refactor — a metronome you can build a career on.</p>
+<p>Then you add one LLM call to your codebase, and the metronome quietly breaks.</p>
+<p>Not loudly. That's the problem. The tests still run. The checkmarks still turn green. But the instrument underneath — the <code>assert</code>, which reads <em>true or false</em> — is now pointed at something that doesn't have a true-or-false answer. It has a <strong>distribution</strong>. A prompt that classifies support emails correctly 70% of the time will pass your test on Monday, fail it on Tuesday, and pass again after someone hits re-run. So your team does what every team does: adds a retry to CI, mutters "flaky," and merges.</p>
+<p>You didn't test the feature. You sampled it once and rounded to <code>True</code>.</p>
+<h2>The incident every LLM team eventually has</h2>
+<p>Here's how the broken loop actually bites. A support-triage bot misroutes a real customer email — <em>"my card was charged twice"</em> lands in the wrong queue for two days. An engineer grabs the exact message, pastes it into the playground, runs it.</p>
+<p>It answers correctly.</p>
+<p>Runs it again. Correct again. Ticket closed: <strong>cannot reproduce.</strong></p>
+<p>Three weeks later it happens again — because there was never a bug that "happens on this input." There was a prompt that's a <em>coin flip</em> on this shape of input, and production kept sampling until it hit the bad side. The playground retry wasn't a verification; it was two lucky coin flips.</p>
+<p>That's the moment TDD's instrument fails completely. A semantic bug — a bug in code whose behavior is a model call — won't reproduce in one run. <strong>The reproduction of a semantic bug is a fraction, not a red test.</strong></p>
+<h2>The instrument swap</h2>
+<p>Benchmark-driven development keeps TDD's loop and swaps the instrument. The unit of feedback stops being the boolean and becomes the <strong>pass fraction</strong>:</p>
 <ul>
-<li><strong>Red</strong> is a low fraction: <code>6/10 FLAKY</code>, not a red cross.</li>
-<li><strong>Green</strong> is a fraction that clears a bar <em>you</em> picked. Maybe that's 10/10. Maybe 95% is fine for your product and your budget. Perfection becomes a decision instead of a default.</li>
-<li><strong>Refactor</strong> means a new prompt or model, and it has to beat the incumbent on the same cases at the same sample size before it ships.</li>
-<li>The benchmark stays in the suite forever afterward, the way a regression test does.</li>
+<li><strong>Red</strong> is a low fraction: <code>6/10 FLAKY</code> — not a red cross.</li>
+<li><strong>Green</strong> is a fraction meeting a bar <em>you chose</em>: <code>10/10</code>, or ≥95% by policy. Perfection is a product decision, not a default.</li>
+<li><strong>Refactor</strong> means changing the prompt or model — and proving it against the incumbent on the same cases, the same sample size, with the cost of the improvement printed next to it.</li>
+<li>The benchmark <strong>stays forever</strong>, exactly like the regression test you keep after fixing a classical bug. Every future prompt tweak re-samples it.</li>
 </ul>
-<p>I've been calling this benchmark-driven development. The loop is TDD's; only the arithmetic changed.</p>
-<h2>The same incident, run through the loop</h2>
-<p>I maintain a small pytest plugin, <a href="https://pypi.org/project/pytest-probability/">pytest-probability</a>, that exists mostly so this loop costs nothing to adopt. A benchmark is a pytest test body with a <code>bench_</code> prefix. That's the whole learning curve.</p>
+<p>Same discipline. Same rhythm. One honest number instead of one lucky boolean.</p>
+<h2>The loop, on a real incident</h2>
+<p>I maintain a small pytest plugin, <a href="https://pypi.org/project/pytest-probability/">pytest-probability</a>, built so this loop costs nothing to adopt — a benchmark is a pytest test body with a <code>bench_</code> prefix. Here's BDD applied to the misrouted email, end to end.</p>
 <p><em>(Disclosure: I'm the creator of pytest-probability — this article describes the methodology I built it for, so read the tooling recommendations with that bias in mind. The plugin is MIT-licensed and free, with no dependencies beyond pytest; the methodology itself works with any harness that can repeat a test and count.)</em></p>
-<p><strong>Step one: the incident becomes a case.</strong> The production message goes in verbatim, next to cases we already believed were fine. Then you sample instead of running once:</p>
+<p><strong>Step 1 — Reproduce: the incident becomes a case.</strong> Take the production input verbatim, pin the expected label, and <em>sample</em> it instead of running it once:</p>
 <pre><code class="language-python"># bench_triage.py
 import pytest
 
@@ -47,8 +43,8 @@ def bench_triage(text, expected):
 
   Overall: 24/30 passed (80%)
 </code></pre>
-<p>There's my unreproducible bug, reproducing four times out of ten. Note the second line, too — <code>password</code> at 8/10 was a liability nobody had filed a ticket for yet. Sampling finds the bugs you weren't looking for, which single runs basically never do.</p>
-<p><strong>Step two: candidates fight the incumbent.</strong> The classic failure mode of prompt work is replacing the prompt because the new one "felt better" in three manual tries. Sample size of three, no control group. Instead, the candidate goes on a parametrize axis next to the current prompt, so both face identical cases:</p>
+<p>Reproduced — four times out of ten. And the sampling caught a <em>second</em> liability (<code>password</code>, 8/10) nobody had filed a ticket for yet. This is the red state, and unlike a red test, it tells you how red.</p>
+<p><strong>Step 2 — Fix: candidates fight the incumbent on an axis.</strong> The failure mode of prompt engineering is swapping in a new prompt because it "felt better" in three manual tries. BDD forbids vibes: the candidate goes on a parametrize axis <em>next to</em> the current prompt, so both face identical cases at identical sample sizes:</p>
 <pre><code class="language-python">@pytest.mark.parametrize(&quot;prompt&quot;, [&quot;v1&quot;, &quot;v2&quot;])
 @pytest.mark.parametrize(&quot;text,expected&quot;, CASES)
 def bench_triage(text, expected, prompt):
@@ -65,25 +61,24 @@ def bench_triage(text, expected, prompt):
   triage::late_box-v1  10/10  $0.0002
   triage::late_box-v2  10/10  $0.0006
 </code></pre>
-<p>This table settled, in one screenshot, an argument that had been going in circles for two days. The new prompt fixes the incident case outright, lifts the weak one to 9/10, holds the strong one, and costs three times as much per call. Is 9/10 good enough? That's a product question, and reasonable people disagreed. But we were finally disagreeing about a number.</p>
-<p>(One detail I appreciate more than I expected: <code>record_usage</code> keeps its numbers even when the assert after it fails. Wrong answers cost money too, and they don't get to hide the bill.)</p>
-<p><strong>Step three: the case never leaves.</strong> Promote v2, delete the v1 arm, keep the benchmark. The incident case is now a permanent sentinel; every future prompt tweak reruns it ten times. In CI we gate on the fraction rather than on perfection, off the plugin's JSON report:</p>
+<p>This table is the entire prompt-review meeting. The candidate fixes the incident outright, lifts the second weak case, holds the strong one — at three times the token cost. Whether 9/10 clears your bar is a product call. The point is you're making it with numbers, and the numbers have prices.</p>
+<p><strong>Step 3 — Guard: the case becomes a sentinel.</strong> Promote v2, delete the v1 arm, keep the benchmark. In CI, gate on the fraction you care about rather than on perfection:</p>
 <pre><code class="language-bash">pytest benchmarks/ --prob-runs=10 --prob-json=report.json || true
 jq -e '.rows[] | select(.case == &quot;triage::refund&quot;) | .pass_rate &gt;= 95' \
   report.json || { echo &quot;incident case regressed&quot;; exit 1; }
 </code></pre>
-<h2>Wrong answer and broken harness are different bugs</h2>
-<p>One more thing repetition surfaces. Once you run cases ten times, some misses turn out not to be the model's fault at all. The plugin splits every run into three classes, and they fall straight out of Python: a clean return passes, an <code>AssertionError</code> fails (the model answered wrong), anything else errors (the harness broke — rate limit, timeout, expired key).</p>
-<pre><code>  triage::refund   6/10  FLAKY        &lt;- nondeterminism: go do prompt work
-  api::summarize   7/10  3 ERRORED    &lt;- model never answered wrong; infra ate 3 runs
+<p>Your pass rate just became a monitored metric — measured before your users measure it for you.</p>
+<h2>Red has three colors now</h2>
+<p>One more thing repetition surfaces that single-shot testing structurally cannot: not every miss means your prompt is bad. In BDD, every run lands in one of three classes, falling straight out of Python — a clean return <strong>passes</strong>, an <code>AssertionError</code> <strong>fails</strong> (your code answered wrong), any other exception <strong>errors</strong> (your harness broke):</p>
+<pre><code>  triage::refund   6/10  FLAKY        ← nondeterminism: do prompt work
+  api::summarize   7/10  3 ERRORED    ← the model never answered wrong; infra dropped 3 runs
 </code></pre>
-<p>A normal test suite collapses both into the same red X. I have personally spent an afternoon "improving" a prompt whose only problem was a rate limit. The word <code>ERRORED</code> would have saved me that afternoon.</p>
-<h2>Writing the cases first</h2>
-<p>Everything above starts from an incident, because that's where most teams meet this. The better version, which I manage maybe half the time, is writing the cases before the prompt exists. The case list is the behavior spec — the thing TDD always claimed tests should be. Your first run comes back <code>0/10</code> everywhere, which is an honest red, and then prompts climb the fractions while the cost column keeps score of what each point of accuracy costs you.</p>
-<p>Half the time. I'm working on it.</p>
-<h2>Try it on one test</h2>
-<p>The tooling stays out of the way on purpose: cases are <code>@pytest.mark.parametrize</code>, outcomes are plain <code>assert</code> (with pytest's assertion introspection intact), selection is <code>-k</code> and <code>-m</code>. The plugin adds the one thing pytest can't say on its own — run it N times, report the fraction, the class of every miss, and the bill.</p>
+<p><code>FLAKY</code> sends you to the prompt. <code>ERRORED</code> sends you to whoever owns the API gateway. Conventional suites collapse both into one red X — and engineers fix the wrong thing.</p>
+<h2>Greenfield BDD: cases before prompts</h2>
+<p>Everything above started from an incident, because that's where most teams meet the loop. But run it from the start and it gets better: <strong>write the cases before the prompt.</strong> The case list <em>is</em> the behavior spec — the thing TDD always promised tests would be. Your first run is <code>0/10</code> across the board; that's your honest red. Then prompts climb the fractions, the cost column keeps score of what each point of accuracy costs, and by the time you ship, "how good is it?" has had a numeric answer for weeks.</p>
+<h2>You don't need permission to start</h2>
+<p>The tooling is deliberately boring: cases are <code>@pytest.mark.parametrize</code>, outcomes are <code>assert</code> (with pytest's full assertion introspection), selection is <code>-k</code> and <code>-m</code>, and the plugin adds only what pytest can't say — <em>run it N times; report the probability, the class of every miss, and the cost.</em> One dependency: pytest.</p>
 <pre><code class="language-bash">pip install pytest-probability
 </code></pre>
-<p>Rename one flaky-ish test to <code>bench_</code>, run it with <code>--prob-runs=10</code>, and meet your actual pass rate. Docs, including a longer version of this workflow, live at <a href="https://pytest-probability.readthedocs.io/en/latest/bdd.html">pytest-probability.readthedocs.io</a>.</p>
-<p>You might not like the number. It was always the number, though. The only thing you get to choose is whether you find out before your users do.</p></body></html>
+<p>Rename one test to <code>bench_</code>, run it with <code>--prob-runs=10</code>, and meet your real pass rate. Docs at <a href="https://pytest-probability.readthedocs.io">pytest-probability.readthedocs.io</a> — the <a href="https://pytest-probability.readthedocs.io/en/latest/bdd.html">benchmark-driven development guide</a> walks the full loop.</p>
+<p>You might not like the number. But it was always the number. TDD taught us that feedback beats hope — benchmark-driven development is just that lesson, restated for code that answers in probabilities: <strong>a semantic bug won't reproduce in one run, and can't hide from ten.</strong></p></body></html>
