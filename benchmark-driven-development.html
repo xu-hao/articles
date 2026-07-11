@@ -1,4 +1,4 @@
-<html><head><meta charset="utf-8"><style>body{max-width:42em;margin:2em auto;font-family:Georgia,serif;line-height:1.6}pre{background:#f4f4f4;padding:1em;overflow-x:auto;font-size:14px}code{font-family:monospace}</style></head><body><h1>TDD Doesn't Work on LLM Code. Here's What Does.</h1>
+<html><head><meta charset="utf-8"><title>TDD Doesn&#39;t Work on LLM Code. Here&#39;s What Does.</title><style>body{max-width:42em;margin:2em auto;font-family:Georgia,serif;line-height:1.6}pre{background:#f4f4f4;padding:1em;overflow-x:auto;font-size:14px}code{font-family:monospace}</style></head><body><h1>TDD Doesn't Work on LLM Code. Here's What Does.</h1>
 <h2>Benchmark-Driven Development: red is a fraction, green is a probability bar, and "cannot reproduce" stops being a resolution.</h2>
 <p>Test-driven development is the best feedback loop our industry ever built. Write a failing test, make it pass, refactor with a safety net, keep the test forever. Red, green, refactor — a metronome you can build a career on.</p>
 <p>Then you add one LLM call to your codebase, and the metronome quietly breaks.</p>
@@ -81,4 +81,5 @@ jq -e '.rows[] | select(.case == &quot;triage::refund&quot;) | .pass_rate &gt;= 
 <pre><code class="language-bash">pip install pytest-probability
 </code></pre>
 <p>Rename one test to <code>bench_</code>, run it with <code>--prob-runs=10</code>, and meet your real pass rate. Docs at <a href="https://pytest-probability.readthedocs.io">pytest-probability.readthedocs.io</a> — the <a href="https://pytest-probability.readthedocs.io/en/latest/bdd.html">benchmark-driven development guide</a> walks the full loop.</p>
-<p>You might not like the number. But it was always the number. TDD taught us that feedback beats hope — benchmark-driven development is just that lesson, restated for code that answers in probabilities: <strong>a semantic bug won't reproduce in one run, and can't hide from ten.</strong></p></body></html>
+<p>You might not like the number. But it was always the number. TDD taught us that feedback beats hope — benchmark-driven development is just that lesson, restated for code that answers in probabilities: <strong>a semantic bug won't reproduce in one run, and can't hide from ten.</strong></p>
+<p><em>Companion piece: the incident-response runbook — <a href="https://medium.com/@xuh123456/your-llm-broke-in-production-do-these-7-things-before-you-touch-the-prompt-7634ea06dd33">Your LLM Broke in Production. Do These 7 Things Before You Touch the Prompt.</a></em></p></body></html>
