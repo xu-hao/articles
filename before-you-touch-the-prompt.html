@@ -1,17 +1,16 @@
 <html><head><meta charset="utf-8"><title>Your LLM Broke in Production. Do These 7 Things Before You Touch the Prompt.</title><style>body{max-width:42em;margin:2em auto;font-family:Georgia,serif;line-height:1.6}pre{background:#f4f4f4;padding:1em;overflow-x:auto;font-size:14px}code{font-family:monospace}blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:1em;color:#444}</style></head><body><h1>Your LLM Broke in Production. Do These 7 Things Before You Touch the Prompt.</h1>
-<h2>A benchmark-driven incident runbook — because "cannot reproduce" is a sample size of one, and hotfixed prompts are how you get next month's incident.</h2>
+<h2>A benchmark-driven incident runbook, because "cannot reproduce" is a sample size of one, and hotfixed prompts are how you get next month's incident.</h2>
 <p>It's 4:40 on a Thursday. Your LLM feature just did something wrong in front of a real user — misrouted a ticket, hallucinated a refund policy, mangled an extraction. Every instinct you have says the same thing: <em>open the prompt, make it better, ship.</em></p>
-<p>That instinct is how LLM systems rot. You'll change the prompt, try the failing input twice, see two right answers, and declare victory — without ever knowing whether you fixed a 40% failure or just rolled dice until they came up sixes. Worse: you'll have no idea what your "fix" broke, because nothing measured the cases that used to work.</p>
-<p>There's a better runbook, and it fits in the time you'd have spent arguing in Slack. It's benchmark-driven development applied to incidents: <strong>the reproduction of a semantic bug is a fraction, not a red test</strong> — so every step below exists to get you from <em>anecdote</em> to <em>fraction</em> before any prompt gets edited.</p>
-<p><em>(Disclosure: I'm the creator of <a href="https://pypi.org/project/pytest-probability/">pytest-probability</a>, the pytest plugin used below — read the tooling with that bias in mind. It's MIT-licensed and free, with no dependencies beyond pytest; the runbook works with any harness that can repeat a test and count.)</em></p>
+<p>That instinct is how LLM systems rot. You'll change the prompt, try the failing input twice, see two right answers, and declare victory, without ever knowing whether you fixed a 40% failure or just rolled dice until they came up sixes. Worse: you'll have no idea what your "fix" broke, because nothing measured the cases that used to work.</p>
+<p>There's a better runbook, and it fits in the time you'd have spent arguing in Slack and saves your the embarrassment when it becomes a recurring issue. It's Benchmark-Driven Development (BDD) applied to incidents: <strong>the reproduction of a semantic bug is a fraction, not a red test.</strong> This is nothing surprising about BDD. It's the good-ole data-driven approach. Your prompt is your machine learning model. Why would you change it without eval? If you haven't build one and your prompt is in production, don't panic. You will see by the end of this article that you can build one incrementally with this approach.</p>
+<p><em>(Disclosure: I'm the creator of <a href="https://pypi.org/project/pytest-probability/">pytest-probability</a>, the pytest plugin used below. Read the tooling with that bias in mind. It's MIT-licensed and free, with no dependencies beyond pytest; the runbook works with any harness that can repeat a test and count.)</em></p>
 <h2>Step 1: Capture the input before it evaporates</h2>
-<p>Pull the <em>exact</em> input from your logs or traces — verbatim, whitespace and all — plus the configuration that served it: model, temperature, prompt version, any context that was stuffed alongside it.</p>
-<p>Do not paraphrase. Semantic bugs live in the <em>shape</em> of an input — a phrasing, a length, an odd token — and a cleaned-up summary of the input is a different input. Paraphrase the repro and you'll spend the afternoon investigating a case that doesn't exist.</p>
+<p>Pull the exact input from your logs or traces, verbatim, whitespace and all, plus the configuration that served it: model, temperature, prompt version, any context that was stuffed alongside it.</p>
 <h2>Step 2: Do NOT retry it in the playground</h2>
-<p>This is the step everyone skips, which is why it's a step.</p>
-<p>Pasting the input into a playground and running it once tells you <em>nothing</em>. If the true failure rate on this input is 40%, a single retry shows the right answer six times out of ten — and "works for me" plus a closed ticket is exactly how this incident becomes a recurring series. One run is not a reproduction attempt. It's a coin flip you're planning to make load-bearing.</p>
+<p>It may be extremely enticing to retry the prompt in a playground and mark the error as a fluke. But pasting the input into a playground and running it once tells you <em>nothing</em>.</p>
+<p>If the true failure rate on this input is 40%, a single retry shows the right answer six times out of ten, and "works for me" plus a closed ticket is exactly how this incident becomes a recurring series.</p>
 <p>Skip the playground. Go to step 3.</p>
-<h2>Step 3: Turn the incident into a case — named after the ticket</h2>
+<h2>Step 3: Turn the incident into a case</h2>
 <p>A benchmark case is a pytest parameter. Put the production input in verbatim, pin the expected output, and use the ticket number as the id so the lineage survives forever:</p>
 <pre><code class="language-python"># bench_triage.py
 import pytest
@@ -26,7 +25,7 @@ import pytest
 def bench_triage(text, expected):
     assert triage(text) == expected
 </code></pre>
-<p>Note the control group. The incident case tells you if you've reproduced the bug; the cases that currently work tell you — later — whether your fix broke anything. Both matter.</p>
+<p>Note the control group. The incident case tells you if you've reproduced the bug; the cases that currently work will tell you later whether your fix broke anything. Both matter.</p>
 <h2>Step 4: Sample it, then read the fraction like a diagnosis</h2>
 <pre><code>$ pytest bench_triage.py --prob-runs=10
 
@@ -38,20 +37,20 @@ def bench_triage(text, expected):
 </code></pre>
 <p>The fraction is a differential diagnosis. Read it like one:</p>
 <ul>
-<li><strong><code>0/10</code></strong> — deterministic failure. Good news, weirdly: this is a classical bug. Use classical tools.</li>
-<li><strong><code>1–9/10 FLAKY</code></strong> — distributional failure. This is prompt/model work, and you now know the base rate you have to beat.</li>
-<li><strong><code>N ERRORED</code></strong> — the model never answered wrong; your <em>harness</em> is failing (rate limits, timeouts, expired keys). Page the platform team, not the prompt engineer.</li>
-<li><strong><code>10/10</code></strong> — your capture is wrong. The bug is real (a user saw it), so if the verbatim input passes every time, something differs between your bench and production: temperature, truncated context, a stale prompt version. Go back to step 1 and diff the configs.</li>
+<li><strong><code>0/10</code></strong> - deterministic failure. Good news, weirdly: this is a classical bug. Use classical tools.</li>
+<li><strong><code>1-9/10 FLAKY</code></strong> - distributional failure. This is prompt/model work, and you now know the base rate you have to beat.</li>
+<li><strong><code>N ERRORED</code></strong> - model never answered wrong; your harness is failing (rate limits, timeouts, expired keys). Page the platform team, not the prompt engineer.</li>
+<li><strong><code>10/10</code></strong> - your capture is wrong. The bug is real (a user saw it), so if the verbatim input passes every time, something differs between your bench and production: temperature, truncated context, a stale prompt version. Go back to step 1 and diff the configs.</li>
 </ul>
-<p>Notice the collateral finding above: <code>password</code> at <code>8/10</code> was quietly broken too, and nobody had filed a ticket. Sampling finds the incidents you haven't had yet.</p>
+<p>Notice the collateral finding above: <code>password</code> at 8/10 was quietly broken too, and nobody had filed a ticket. Sampling finds the incidents you haven't had yet.</p>
 <h2>Step 5: Set the bar before you experiment</h2>
-<p>Before you write prompt v2, write the acceptance criteria — while you're still objective:</p>
+<p>Before you write prompt v2, write the acceptance criteria, or look up SLA, if there is one, (if there is none, that's another story) while you're still objective:</p>
 <blockquote>
 <p>Ship the fix if: <code>INC-4213</code> ≥ 95%, no control case regresses, cost ≤ 3× current.</p>
 </blockquote>
 <p>This is pre-registration, borrowed from science, and it exists for the same reason: once you've spent two hours on a candidate prompt, "8/10 is probably fine" starts sounding reasonable. Decide what fine means before you're emotionally invested in the answer.</p>
 <h2>Step 6: Make the fix fight the incumbent</h2>
-<p>Never edit the prompt in place. The candidate goes on a parametrize axis <em>next to</em> the current prompt, so both face identical cases at identical sample sizes, with cost attached:</p>
+<p>Never edit the prompt in place. The candidate goes on a parametrize axis next to the current prompt, so both face identical cases at identical sample sizes, with cost attached:</p>
 <pre><code class="language-python">@pytest.mark.parametrize(&quot;prompt&quot;, [&quot;v1&quot;, &quot;v2&quot;])
 @pytest.mark.parametrize(&quot;text,expected&quot;, CASES)
 def bench_triage(text, expected, prompt):
@@ -68,14 +67,14 @@ def bench_triage(text, expected, prompt):
   triage::late_box-v1  10/10  $0.0002
   triage::late_box-v2  10/10  $0.0006
 </code></pre>
-<p>Check it against the bar from step 5: incident case fixed outright, control cases held or improved, cost 3× — inside the ceiling. Ship it. If it hadn't cleared the bar, you'd iterate v3 against the same table instead of arguing about whose three manual tries felt better.</p>
+<p>Check it against the bar from step 5: incident case fixed outright, control cases held or improved, cost 3× , which is inside the ceiling. Ship it. If it hadn't cleared the bar, you'd iterate v3 against the same table instead of arguing about whose three manual tries felt better.</p>
 <h2>Step 7: Promote, plant the sentinel, close the ticket with numbers</h2>
-<p>Promote v2 and delete the v1 arm — but the benchmark stays forever. <code>INC-4213</code> is now a permanent regression sentinel: every future prompt tweak re-runs it ten times, whether or not anyone remembers the original incident. Gate it in CI off the JSON report:</p>
+<p>Promote v2 and delete the v1 arm, but the benchmark stays forever. <code>INC-4213</code> is now a permanent regression sentinel: every future prompt tweak re-runs it ten times, whether or not anyone remembers the original incident. Gate it in CI off the JSON report:</p>
 <pre><code class="language-bash">pytest benchmarks/ --prob-runs=10 --prob-json=report.json || true
 jq -e '.rows[] | select(.case == &quot;triage::INC-4213&quot;) | .pass_rate &gt;= 95' \
   report.json || { echo &quot;INC-4213 regressed&quot;; exit 1; }
 </code></pre>
-<p>Then close the ticket the way this methodology teaches you to close every ticket — with fractions, not adjectives:</p>
+<p>Then close the ticket the way this methodology teaches you to close every ticket with a reproducible fraction:</p>
 <blockquote>
 <p><strong>INC-4213 resolved.</strong> Reproduced at 6/10 on prompt v1. Fixed by v2: 10/10 on the incident case, password 8/10→9/10, late_box held at 10/10, cost 3× (within budget). Guarded in CI at ≥95%.</p>
 </blockquote>
@@ -84,7 +83,7 @@ jq -e '.rows[] | select(.case == &quot;triage::INC-4213&quot;) | .pass_rate &gt;
 <ol>
 <li><strong>Capture</strong> the input verbatim, plus model/params/prompt version.</li>
 <li><strong>Don't</strong> retry it once in a playground.</li>
-<li><strong>Case</strong> it — <code>pytest.param(..., id="INC-XXXX")</code> — with a control group.</li>
+<li><strong>Case</strong> it — <code>pytest.param(..., id="INC-XXXX")</code> - with a control group.</li>
 <li><strong>Sample</strong> ×10 and diagnose: <code>0/10</code> debugger · <code>k/10</code> prompt work · <code>ERRORED</code> infra · <code>10/10</code> bad capture.</li>
 <li><strong>Pre-register</strong> the bar: target fraction, no regressions, cost ceiling.</li>
 <li><strong>Fight</strong> candidate vs incumbent on an axis; judge by the table.</li>
@@ -93,4 +92,4 @@ jq -e '.rows[] | select(.case == &quot;triage::INC-4213&quot;) | .pass_rate &gt;
 <pre><code class="language-bash">pip install pytest-probability
 </code></pre>
 <p>The whole thing is ordinary pytest — cases are <code>parametrize</code>, outcomes are <code>assert</code>, and the plugin adds what pytest can't say alone: run it ten times, and report the probability, the class of every miss, and the bill. Docs at <a href="https://pytest-probability.readthedocs.io/en/latest/bdd.html">pytest-probability.readthedocs.io</a>.</p>
-<p>Next time production breaks at 4:40 on a Thursday, you'll have a fraction by 5:00, a measured fix by 5:30, and a sentinel by 5:31 — and you will never again close a semantic bug with the words "cannot reproduce."</p></body></html>
+<p>Next time production breaks at 4:40 on a Thursday, you'll have a fraction by 5:00, a measured fix by 5:30, and a sentinel by 5:31 — and you will never again close a semantic bug with the words "cannot reproduce." Over time, you will have built a proper eval dataset based on real usage.</p></body></html>
