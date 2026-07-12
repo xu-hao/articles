@@ -22,9 +22,9 @@ Three lines, three questions:
 - **📌 Detail** is what's happening right now. It rewrites itself as the conversation moves.
 - **🌿 Metadata** is where you are: branch, worktree if you're in one, and how full the context window is.
 
-The rest of this article is about how those three lines are kept accurate and cheap, because that is where the actual design decisions are.
+The rest of this article covers how those three lines are kept accurate and cheap. That is where the actual design decisions are.
 
-## Two lines, because re-anchoring asks two questions
+## One stable line and one live line
 
 When you come back to a session, you need the goal and the current step, and they move at completely different speeds. The goal should survive fifty turns. The step changes every turn. Collapse them into one summary and you get the worst of both: a line that churns so much you stop trusting it, or a line so general it tells you nothing.
 
@@ -43,7 +43,7 @@ Unless the model answers yes, the goal line is reproduced character for characte
 
 Status lines redraw constantly. The obvious implementation, summarize on every redraw, would bill you for staring at your own terminal. The other obvious implementation, summarize every N seconds, still burns tokens while you're at lunch.
 
-worknote refreshes on exactly one event: the transcript gained a new user or assistant message. The script counts text messages in the session transcript and compares against the count it saw last time. No new message, no model call. An idle session costs zero. A long tool-running turn costs zero too, because tool calls and tool results don't count as messages. You pay once per actual conversational step, which is the only time the note could have changed anyway.
+worknote refreshes on exactly one event: the transcript gained a new user or assistant message. The script counts text messages in the session transcript and compares against the count it saw last time. No new message, no model call. An idle session costs zero. A long tool-running turn costs zero too: tool calls and tool results don't count as messages. You pay once per actual conversational step, which is the only time the note could have changed anyway.
 
 The call itself runs detached in the background, so the status line renders instantly from the previous note and the refresh lands a few seconds later. The render path never waits on a model.
 
@@ -51,7 +51,7 @@ The call itself runs detached in the background, so the status line renders inst
 
 How much transcript does the summarizer need? Usually very little. The last 14 messages almost always name the task. But sometimes the recent window is all confirmations: "yes", "ok", "do it". The real task is forty messages back, and a summary of "the developer agreed to something" helps nobody.
 
-The tempting fix is to always send a big window. That costs more on every call and, worse, it drags the detail line backward, because a model reading 120 messages summarizes the session instead of the moment. worknote does the opposite: it sends the small window first and tells the model to reply with the single word NEED_MORE if it can't tell what's being worked on. On that reply, the generator re-runs with 40 messages, then 120:
+The tempting fix is to always send a big window. That costs more on every call and, worse, it drags the detail line backward: a model reading 120 messages summarizes the session instead of the moment. worknote does the opposite: it sends the small window first and tells the model to reply with the single word NEED_MORE if it can't tell what's being worked on. On that reply, the generator re-runs with 40 messages, then 120:
 
 ```bash
 TIERS=("14:4000" "40:14000" "120:40000")
@@ -59,7 +59,7 @@ TIERS=("14:4000" "40:14000" "120:40000")
 
 Escalation is the rare path, so the common path stays cheap and stays recent. The model decides when it needs history, which beats you guessing a window size that fits every conversation.
 
-## Per-session, because you have five of them
+## One note per session
 
 The note is keyed by session id, one file per session under `~/.claude/worknote/notes/`. Run five Claude Code sessions side by side and each tab shows its own goal, its own current step, its own branch. That was the point of the whole exercise: the times you most need the note are exactly the times you're running enough sessions to forget one.
 
