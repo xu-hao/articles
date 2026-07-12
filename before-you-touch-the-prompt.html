@@ -12,29 +12,10 @@
 <p>Skip the playground. Go to step 3.</p>
 <h2>Step 3: Turn the incident into a case</h2>
 <p>A benchmark case is a pytest parameter. Put the production input in verbatim, pin the expected output, and use the ticket number as the id so the lineage survives forever:</p>
-<pre><code class="language-python"># bench_triage.py
-import pytest
-
-@pytest.mark.parametrize(&quot;text,expected&quot;, [
-    # production incident, verbatim from trace 7f3a…
-    pytest.param(&quot;my card was charged twice&quot;, &quot;billing&quot;, id=&quot;INC-4213&quot;),
-    # the cases you already believe in ride along as a control group
-    pytest.param(&quot;i cannot reset my password&quot;, &quot;account&quot;, id=&quot;password&quot;),
-    pytest.param(&quot;the box arrived two weeks late&quot;, &quot;shipping&quot;, id=&quot;late_box&quot;),
-])
-def bench_triage(text, expected):
-    assert triage(text) == expected
-</code></pre>
+<pre><code class="language-python"># bench_triage.py<br>import pytest<br><br>@pytest.mark.parametrize(&quot;text,expected&quot;, [<br>    # production incident, verbatim from trace 7f3a…<br>    pytest.param(&quot;my card was charged twice&quot;, &quot;billing&quot;, id=&quot;INC-4213&quot;),<br>    # the cases you already believe in ride along as a control group<br>    pytest.param(&quot;i cannot reset my password&quot;, &quot;account&quot;, id=&quot;password&quot;),<br>    pytest.param(&quot;the box arrived two weeks late&quot;, &quot;shipping&quot;, id=&quot;late_box&quot;),<br>])<br>def bench_triage(text, expected):<br>    assert triage(text) == expected</code></pre>
 <p>Note the control group. The incident case tells you if you've reproduced the bug; the cases that currently work will tell you later whether your fix broke anything. Both matter.</p>
 <h2>Step 4: Sample it, then read the fraction like a diagnosis</h2>
-<pre><code>$ pytest bench_triage.py --prob-runs=10
-
-  triage::INC-4213-v1   6/10  $0.0002  FLAKY
-  triage::password-v1   8/10  $0.0002  FLAKY
-  triage::late_box-v1  10/10  $0.0002
-
-  Overall: 24/30 passed (80%)
-</code></pre>
+<pre><code>$ pytest bench_triage.py --prob-runs=10<br><br>  triage::INC-4213-v1   6/10  $0.0002  FLAKY<br>  triage::password-v1   8/10  $0.0002  FLAKY<br>  triage::late_box-v1  10/10  $0.0002<br><br>  Overall: 24/30 passed (80%)</code></pre>
 <p>The fraction is a differential diagnosis. Read it like one:</p>
 <ul>
 <li><strong><code>0/10</code></strong> - deterministic failure. Good news, weirdly: this is a classical bug. Use classical tools.</li>
@@ -51,29 +32,12 @@ def bench_triage(text, expected):
 <p>This is pre-registration, borrowed from science, and it exists for the same reason: once you've spent two hours on a candidate prompt, "8/10 is probably fine" starts sounding reasonable. Decide what fine means before you're emotionally invested in the answer.</p>
 <h2>Step 6: Make the fix fight the incumbent</h2>
 <p>Never edit the prompt in place. The candidate goes on a parametrize axis next to the current prompt, so both face identical cases at identical sample sizes, with cost attached:</p>
-<pre><code class="language-python">@pytest.mark.parametrize(&quot;prompt&quot;, [&quot;v1&quot;, &quot;v2&quot;])
-@pytest.mark.parametrize(&quot;text,expected&quot;, CASES)
-def bench_triage(text, expected, prompt):
-    response = llm.complete(PROMPTS[prompt].format(text=text))
-    record_usage(model=response.model, cost=response.cost,
-                 input_tokens=response.input_tokens,
-                 output_tokens=response.output_tokens)
-    assert response.category == expected
-</code></pre>
-<pre><code>  triage::INC-4213-v1   6/10  $0.0002  FLAKY
-  triage::INC-4213-v2  10/10  $0.0006
-  triage::password-v1   8/10  $0.0002  FLAKY
-  triage::password-v2   9/10  $0.0006  FLAKY
-  triage::late_box-v1  10/10  $0.0002
-  triage::late_box-v2  10/10  $0.0006
-</code></pre>
+<pre><code class="language-python">@pytest.mark.parametrize(&quot;prompt&quot;, [&quot;v1&quot;, &quot;v2&quot;])<br>@pytest.mark.parametrize(&quot;text,expected&quot;, CASES)<br>def bench_triage(text, expected, prompt):<br>    response = llm.complete(PROMPTS[prompt].format(text=text))<br>    record_usage(model=response.model, cost=response.cost,<br>                 input_tokens=response.input_tokens,<br>                 output_tokens=response.output_tokens)<br>    assert response.category == expected</code></pre>
+<pre><code>  triage::INC-4213-v1   6/10  $0.0002  FLAKY<br>  triage::INC-4213-v2  10/10  $0.0006<br>  triage::password-v1   8/10  $0.0002  FLAKY<br>  triage::password-v2   9/10  $0.0006  FLAKY<br>  triage::late_box-v1  10/10  $0.0002<br>  triage::late_box-v2  10/10  $0.0006</code></pre>
 <p>Check it against the bar from step 5: incident case fixed outright, control cases held or improved, cost 3× , which is inside the ceiling. Ship it. If it hadn't cleared the bar, you'd iterate v3 against the same table instead of arguing about whose three manual tries felt better.</p>
 <h2>Step 7: Promote, plant the sentinel, close the ticket with numbers</h2>
 <p>Promote v2 and delete the v1 arm, but the benchmark stays forever. <code>INC-4213</code> is now a permanent regression sentinel: every future prompt tweak re-runs it ten times, whether or not anyone remembers the original incident. Gate it in CI off the JSON report:</p>
-<pre><code class="language-bash">pytest benchmarks/ --prob-runs=10 --prob-json=report.json || true
-jq -e '.rows[] | select(.case == &quot;triage::INC-4213&quot;) | .pass_rate &gt;= 95' \
-  report.json || { echo &quot;INC-4213 regressed&quot;; exit 1; }
-</code></pre>
+<pre><code class="language-bash">pytest benchmarks/ --prob-runs=10 --prob-json=report.json || true<br>jq -e '.rows[] | select(.case == &quot;triage::INC-4213&quot;) | .pass_rate &gt;= 95' \<br>  report.json || { echo &quot;INC-4213 regressed&quot;; exit 1; }</code></pre>
 <p>Then close the ticket the way this methodology teaches you to close every ticket with a reproducible fraction:</p>
 <blockquote>
 <p><strong>INC-4213 resolved.</strong> Reproduced at 6/10 on prompt v1. Fixed by v2: 10/10 on the incident case, password 8/10→9/10, late_box held at 10/10, cost 3× (within budget). Guarded in CI at ≥95%.</p>
@@ -89,7 +53,6 @@ jq -e '.rows[] | select(.case == &quot;triage::INC-4213&quot;) | .pass_rate &gt;
 <li><strong>Fight</strong> candidate vs incumbent on an axis; judge by the table.</li>
 <li><strong>Sentinel</strong> forever; gate CI on the fraction; close the ticket with numbers.</li>
 </ol>
-<pre><code class="language-bash">pip install pytest-probability
-</code></pre>
+<pre><code class="language-bash">pip install pytest-probability</code></pre>
 <p>The whole thing is ordinary pytest — cases are <code>parametrize</code>, outcomes are <code>assert</code>, and the plugin adds what pytest can't say alone: run it ten times, and report the probability, the class of every miss, and the bill. Docs at <a href="https://pytest-probability.readthedocs.io/en/latest/bdd.html">pytest-probability.readthedocs.io</a>.</p>
 <p>Next time production breaks at 4:40 on a Thursday, you'll have a fraction by 5:00, a measured fix by 5:30, and a sentinel by 5:31 — and you will never again close a semantic bug with the words "cannot reproduce." Over time, you will have built a proper eval dataset based on real usage.</p></body></html>
