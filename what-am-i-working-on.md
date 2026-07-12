@@ -4,9 +4,9 @@
 
 It's 3 PM and you have three Claude Code sessions open in three terminal tabs. One is migrating a schema. One is chasing a flaky test. The third has been running tools for five minutes, and you have honestly forgotten what you asked it to do. So you tab over and scroll: file reads, greps, a test run, more greps. Somewhere up in the scrollback is the message where you stated the task. You are now spending your attention reconstructing your own intent.
 
-Scrollback is a log, not a summary. That was fine when you wrote the code and the tool just displayed it. Agentic coding flips the ratio: the assistant works for minutes at a time, you supervise several of these at once, and every glance at a session starts with the same question. What is this one doing? The agent always knows. You are the one who forgets.
+Scrollback is a log. It was fine when you wrote the code and the tool just displayed it. Agentic coding flips the ratio: the assistant works for minutes at a time, you supervise several of these at once, and every glance at a session starts with the same question. What is this one doing? The agent always knows. You are the one who forgets.
 
-The fix is not discipline, and it is not a bigger monitor. **A session's state should be readable in one glance, and a model that costs a fraction of a cent can keep that glance current.** That is the whole idea behind [worknote](https://github.com/xu-hao/worknote), a status line for Claude Code that pins this to the bottom of every session:
+Discipline won't fix this, and neither will a bigger monitor. **A session's state should be readable in one glance, and a model that costs a fraction of a cent can keep that glance current.** That is the whole idea behind [worknote](https://github.com/xu-hao/worknote), a status line for Claude Code that pins this to the bottom of every session:
 
 ```
 🎯 Build a per-session status-line summarizer for Claude Code
