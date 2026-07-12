@@ -1,0 +1,53 @@
+<html><head><meta charset="utf-8"><title>That Claude Code Hook You Love? Turn It Into a Plugin Anyone Can Install.</title><style>body{max-width:42em;margin:2em auto;font-family:Georgia,serif;line-height:1.6}pre{background:#f4f4f4;padding:1em;overflow-x:auto;font-size:14px}code{font-family:monospace}blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:1em;color:#444}</style></head><body><h1>That Claude Code Hook You Love? Turn It Into a Plugin Anyone Can Install.</h1>
+<h2>How to convert a private hook into an installable plugin, using a notification sound as the running example.</h2>
+<p>You have a hook you love. Maybe it plays a sound when Claude finishes a task, formats files after every edit, or logs your bash commands. It lives in <code>~/.claude/settings.json</code>, it works great, and it is completely stuck there. New laptop? Copy the JSON by hand. A colleague sees your terminal ding and asks how you did it? You paste a JSON fragment into Slack and wish them luck with the merge.</p>
+<p>Claude Code plugins fix this, and converting a hook is much less work than the word "plugin" suggests. <strong>A plugin is a git repo with two small JSON files and your script; the whole conversion takes about ten minutes.</strong> This tutorial walks through a real one: <a href="https://github.com/xu-hao/claude-chime">chime</a>, which plays a sound and shows a desktop notification when Claude needs you.</p>
+<h2>Step 1: Look at what you have</h2>
+<p>The starting point is a hook block in <code>~/.claude/settings.json</code>. Here is the one we're converting, which fires on two <code>Notification</code> events:</p>
+<pre><code class="language-json">&quot;hooks&quot;: {<br>  &quot;Notification&quot;: [<br>    {<br>      &quot;matcher&quot;: &quot;permission_prompt&quot;,<br>      &quot;hooks&quot;: [{<br>        &quot;type&quot;: &quot;command&quot;,<br>        &quot;command&quot;: &quot;notify-send 'Claude Code' 'Permission needed' &amp;&amp; pw-play /usr/share/sounds/freedesktop/stereo/bell.oga&quot;,<br>        &quot;timeout&quot;: 5<br>      }]<br>    },<br>    {<br>      &quot;matcher&quot;: &quot;idle_prompt&quot;,<br>      &quot;hooks&quot;: [{<br>        &quot;type&quot;: &quot;command&quot;,<br>        &quot;command&quot;: &quot;notify-send 'Claude Code' \&quot;What's next?\&quot; &amp;&amp; pw-play /usr/share/sounds/freedesktop/stereo/complete.oga&quot;,<br>        &quot;timeout&quot;: 5<br>      }]<br>    }<br>  ]<br>}</code></pre>
+<p><code>permission_prompt</code> fires when Claude wants approval. <code>idle_prompt</code> fires when Claude finishes and waits for input. That second one is the "task done" sound.</p>
+<h2>Step 2: Create the skeleton</h2>
+<p>A hooks plugin needs exactly this layout:</p>
+<pre><code>claude-chime/<br>├── .claude-plugin/<br>│   ├── plugin.json        # the manifest<br>│   └── marketplace.json   # makes the repo installable (step 6)<br>├── hooks/<br>│   └── hooks.json         # your hook config, almost verbatim<br>└── scripts/<br>    └── notify.sh          # your command, promoted to a file</code></pre>
+<p>Note the split: <code>plugin.json</code> and <code>marketplace.json</code> live inside <code>.claude-plugin/</code>, while <code>hooks/</code> and <code>scripts/</code> sit at the repo root. Getting this backwards is the most common mistake.</p>
+<h2>Step 3: Write the manifest</h2>
+<p><code>.claude-plugin/plugin.json</code> describes the plugin. Only <code>name</code> is required, and it must be kebab-case:</p>
+<pre><code class="language-json">{<br>  &quot;name&quot;: &quot;chime&quot;,<br>  &quot;displayName&quot;: &quot;Chime&quot;,<br>  &quot;description&quot;: &quot;Desktop notification and sound when Claude Code finishes a task or needs permission&quot;,<br>  &quot;version&quot;: &quot;0.1.0&quot;,<br>  &quot;author&quot;: { &quot;name&quot;: &quot;Hao Xu&quot; },<br>  &quot;license&quot;: &quot;MIT&quot;<br>}</code></pre>
+<h2>Step 4: Promote the command to a script</h2>
+<p>You could paste the shell one-liners straight into the plugin's hook config. Resist that. A script file gives you room to handle other people's machines, and other people's machines is the entire reason you're making a plugin. Here is <code>scripts/notify.sh</code>:</p>
+<pre><code class="language-bash">#!/usr/bin/env bash<br># chime — desktop notification + sound for Claude Code events.<br># Usage: notify.sh &lt;kind&gt;    kind: permission | done<br>kind=&quot;${1:-done}&quot;<br>case &quot;$kind&quot; in<br>  permission) msg=&quot;Permission needed&quot;; sound=bell.oga ;;<br>  *)          msg=&quot;What's next?&quot;;      sound=complete.oga ;;<br>esac<br><br>command -v notify-send &gt;/dev/null 2&gt;&amp;1 &amp;&amp; notify-send &quot;Claude Code&quot; &quot;$msg&quot;<br><br>player=$(command -v pw-play || command -v paplay || true)<br>[ -n &quot;$player&quot; ] &amp;&amp; &quot;$player&quot; &quot;/usr/share/sounds/freedesktop/stereo/$sound&quot; 2&gt;/dev/null<br><br>exit 0</code></pre>
+<p>Two portability moves worth copying: every external tool is checked with <code>command -v</code> before use, and the script exits 0 no matter what. A notification hook that fails should stay silent; it should never break someone's session. Don't forget <code>chmod +x scripts/notify.sh</code>.</p>
+<h2>Step 5: Write the hook config</h2>
+<p><code>hooks/hooks.json</code> is your settings.json block with one change: commands point at the bundled script through <code>${CLAUDE_PLUGIN_ROOT}</code>, a variable Claude Code resolves to wherever the plugin ends up installed:</p>
+<pre><code class="language-json">{<br>  &quot;hooks&quot;: {<br>    &quot;Notification&quot;: [<br>      {<br>        &quot;matcher&quot;: &quot;permission_prompt&quot;,<br>        &quot;hooks&quot;: [{<br>          &quot;type&quot;: &quot;command&quot;,<br>          &quot;command&quot;: &quot;\&quot;${CLAUDE_PLUGIN_ROOT}\&quot;/scripts/notify.sh permission&quot;,<br>          &quot;timeout&quot;: 5<br>        }]<br>      },<br>      {<br>        &quot;matcher&quot;: &quot;idle_prompt&quot;,<br>        &quot;hooks&quot;: [{<br>          &quot;type&quot;: &quot;command&quot;,<br>          &quot;command&quot;: &quot;\&quot;${CLAUDE_PLUGIN_ROOT}\&quot;/scripts/notify.sh done&quot;,<br>          &quot;timeout&quot;: 5<br>        }]<br>      }<br>    ]<br>  }<br>}</code></pre>
+<p>Keep the quotes around <code>${CLAUDE_PLUGIN_ROOT}</code>. Install paths can contain spaces.</p>
+<p>Now validate:</p>
+<pre><code>$ claude plugin validate ./claude-chime<br>Validating plugin manifest: ./claude-chime/.claude-plugin/plugin.json<br>✔ Validation passed</code></pre>
+<h2>Step 6: The marketplace gotcha</h2>
+<p>Here is where the ten minutes usually becomes twenty. You'd expect to install straight from the directory, and you'd be wrong:</p>
+<pre><code>$ claude plugin install ./claude-chime<br>✘ Failed to install plugin &quot;./claude-chime&quot;: Plugin &quot;./claude-chime&quot;<br>  not found in any configured marketplace</code></pre>
+<p>Plugins install from marketplaces. The fix is to make the repo its own marketplace by adding <code>.claude-plugin/marketplace.json</code>:</p>
+<pre><code class="language-json">{<br>  &quot;name&quot;: &quot;xu-hao&quot;,<br>  &quot;owner&quot;: { &quot;name&quot;: &quot;Hao Xu&quot; },<br>  &quot;plugins&quot;: [<br>    {<br>      &quot;name&quot;: &quot;chime&quot;,<br>      &quot;source&quot;: &quot;./&quot;,<br>      &quot;description&quot;: &quot;Desktop notification and sound when Claude Code finishes a task or needs permission&quot;<br>    }<br>  ]<br>}</code></pre>
+<p>The marketplace <code>name</code> is your namespace (your GitHub username is a good choice), and <code>source: "./"</code> says the plugin lives in this same repo. Now both commands work:</p>
+<pre><code>$ claude plugin marketplace add ./claude-chime<br>✔ Successfully added marketplace: xu-hao (declared in user settings)<br>$ claude plugin install chime@xu-hao --scope user<br>✔ Successfully installed plugin: chime@xu-hao (scope: user)</code></pre>
+<h2>Step 7: Delete the original hook</h2>
+<p>If the hook stays in settings.json while the plugin is enabled, both fire. You get two notifications and a double chime on every event. Open <code>~/.claude/settings.json</code>, delete the block from step 1, and check the file still parses:</p>
+<pre><code>$ jq -e 'has(&quot;hooks&quot;) | not' ~/.claude/settings.json<br>true</code></pre>
+<p>A malformed settings.json silently disables everything in it, so the <code>jq</code> check is worth the five seconds. Plugin hooks load at session start; open a fresh session and trigger a permission prompt to hear it work.</p>
+<h2>Step 8: Push it</h2>
+<pre><code>$ gh repo create you/claude-chime --public --source=. --push</code></pre>
+<p>That's the whole distribution story. Anyone can now run:</p>
+<pre><code class="language-sh">claude plugin marketplace add you/claude-chime<br>claude plugin install chime@you</code></pre>
+<p>And your own next laptop is those same two commands.</p>
+<h2>The checklist</h2>
+<ol>
+<li><strong>Skeleton</strong>: <code>.claude-plugin/</code> for the two JSON files, <code>hooks/</code> and <code>scripts/</code> at root.</li>
+<li><strong>Manifest</strong>: <code>plugin.json</code> with a kebab-case <code>name</code>.</li>
+<li><strong>Script</strong>: promote inline commands to <code>scripts/</code>, guard every dependency, exit 0.</li>
+<li><strong>Hooks</strong>: copy your settings block, swap paths to <code>"${CLAUDE_PLUGIN_ROOT}"/...</code>.</li>
+<li><strong>Marketplace</strong>: <code>marketplace.json</code> with <code>source: "./"</code> makes the repo installable.</li>
+<li><strong>Install</strong>: <code>marketplace add</code> the repo, then <code>install name@marketplace</code>.</li>
+<li><strong>Dedup</strong>: delete the old settings.json block or everything fires twice.</li>
+<li><strong>Publish</strong>: push to GitHub; installation is two commands for anyone.</li>
+</ol>
+<p>The next time someone watches your terminal ding and asks how, the answer fits in one Slack message, and it isn't JSON.</p></body></html>
