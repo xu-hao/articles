@@ -2,6 +2,8 @@
 
 ## worknote is a live, two-level "what am I working on" note pinned under Claude Code, refreshed by a cheap model only when the conversation moves.
 
+<!-- medium-topics: Programming, AI, Claude, Productivity, Developer Tools -->
+
 It's 3 PM and you have three Claude Code sessions open in three terminal tabs. One is migrating a schema. One is chasing a flaky test. The third has been running tools for five minutes, and you have honestly forgotten what you asked it to do. So you tab over and scroll: file reads, greps, a test run, more greps. Somewhere up in the scrollback is the message where you stated the task. You are now spending your attention reconstructing your own intent.
 
 Scrollback is a log. It was fine when you wrote the code and the tool just displayed it. Agentic coding flips the ratio: the assistant works for minutes at a time, you supervise several of these at once, and every glance at a session starts with the same question. What is this one doing? The agent always knows. You are the one who forgets.

@@ -2,6 +2,8 @@
 
 ## How to convert a private hook into an installable plugin, using a notification sound as the running example.
 
+<!-- medium-topics: Programming, AI, Claude, Developer Tools, Software Development -->
+
 You have a hook you love. Maybe it plays a sound when Claude finishes a task, formats files after every edit, or logs your bash commands. It lives in `~/.claude/settings.json`, it works great, and it is completely stuck there. New laptop? Copy the JSON by hand. A colleague sees your terminal ding and asks how you did it? You paste a JSON fragment into Slack and wish them luck with the merge.
 
 Claude Code plugins fix this, and converting a hook is much less work than the word "plugin" suggests. **A plugin is a git repo with two small JSON files and your script; the whole conversion takes about ten minutes.** This tutorial walks through a real one: [chime](https://github.com/xu-hao/claude-chime), which plays a sound and shows a desktop notification when Claude needs you.
