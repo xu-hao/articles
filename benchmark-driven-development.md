@@ -128,4 +128,4 @@ Rename one test to `bench_`, run it with `--prob-runs=10`, and meet your real pa
 
 You might not like the number. But it was always the number. TDD taught us that feedback beats hope — benchmark-driven development is just that lesson, restated for code that answers in probabilities: **a semantic bug won't reproduce in one run, and can't hide from ten.**
 
-*Companion piece: the incident-response runbook — [Your LLM Broke in Production. Do These 7 Things Before You Touch the Prompt.](https://medium.com/@xuh123456/your-llm-broke-in-production-do-these-7-things-before-you-touch-the-prompt-7634ea06dd33)*
+*Companion piece: the incident-response runbook — [Your LLM Broke in Production. Do These 7 Things Before You Touch the Prompt.](before-you-touch-the-prompt.html)*
