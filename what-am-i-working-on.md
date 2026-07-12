@@ -39,7 +39,7 @@ NOW: <the specific thing being worked on right now, one sentence>
 
 Unless the model answers yes, the goal line is reproduced character for character. Why so strict? Because a summarizer left to its own devices will happily rephrase the same goal a different way every call, and a status line that keeps rewording itself reads like noise. The yes/no question turns "rewrite the summary" into "judge whether the work changed", which is a much easier call for a small model to get right.
 
-## Refresh on messages, not on a clock
+## Refresh only when a new message arrives
 
 Status lines redraw constantly. The obvious implementation, summarize on every redraw, would bill you for staring at your own terminal. The other obvious implementation, summarize every N seconds, still burns tokens while you're at lunch.
 
