@@ -4,7 +4,7 @@
 
 <!-- medium-topics: Programming, AI, Machine Learning, Large Language Models, Software Development -->
 
-You ask an AI to update a customer FAQ from an internal policy memo. You're careful with the instruction: update only the answers the FAQ already has, do not add topics from the memo the FAQ doesn't cover. The output comes back with a shiny new line about locker rentals you never asked for. You run it again to show a colleague. This time the line is gone. Which run was the bug?
+You ask an AI to update a customer FAQ from an internal policy memo. You're careful with the instruction: update only the answers the FAQ already has, do not add topics from the memo the FAQ doesn't cover. The output comes back with a new line about locker rentals you never asked for. You run it again to show a colleague. This time the line is gone. Which run was the bug?
 
 Everyone who works with LLMs has a version of this story. Ask for a document A' that reformats A in the style of B, and B's content bleeds in. Ask to make A match B, and sometimes you get A plus B. The usual conclusion is that models are sloppy about instructions, and the usual evidence is one memorable bad output.
 
@@ -19,7 +19,7 @@ Four tasks, each a pair of documents with planted canary facts:
 
 Scoring is mechanical. If a forbidden canary from B shows up in the output, that run is contaminated; if a required fact from A goes missing, that's a drop. No LLM judges, just string matching, so anyone can re-run it and get the same verdicts. The harness, cases, and every raw output are in the repo linked at the end.
 
-I ran each task 10 times per engine through two agentic CLIs as configured on my machine: Claude Code running Fable 5, Sonnet 5, and Haiku 4.5, and Codex CLI running GPT-5.6-sol at xhigh reasoning effort. Format-transfer tasks also ran under a terse instruction variant with all the belt-and-suspenders phrasing removed. Then I added longer versions: a rambling 950-word transcript, and a 20-question FAQ against a 12-item memo.
+I ran each task 10 times per engine through two agentic CLIs as configured on my machine: Claude Code running Fable 5, Sonnet 5, and Haiku 4.5, and Codex CLI running GPT-5.6-sol at xhigh reasoning effort. Format-transfer tasks also ran under a terse instruction variant that drops the repeated warnings and keeps one sentence of constraint. Then I added longer versions: a rambling 950-word transcript, and a 20-question FAQ against a 12-item memo.
 
 ## Result one: the crime never happened
 
