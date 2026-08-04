@@ -62,59 +62,45 @@
 </tr>
 </tbody>
 </table></div>
-<p>Here are the measured totals for that exact task: the mean of its 10 corrected generation calls. Total-token entries are mean ± standard error; input counts are fixed because each condition reused the same request body. The defined version was 23% shorter in characters, but it used <strong>22.7 more total tokens</strong> than full prose because it also induced more thinking.</p>
+<p>Here are the measured totals for that exact task: the mean of its 10 corrected generation calls. Total-token entries are mean ± standard error. The defined version was 23% shorter in characters, but it used <strong>22.7 more total tokens</strong> than full prose.</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
 <th>Form</th>
-<th style="text-align:right">Input</th>
-<th style="text-align:right">Visible output</th>
-<th style="text-align:right">Thinking</th>
-<th style="text-align:right"><strong>Total tokens (mean ± SE)</strong></th>
-<th style="text-align:right">Change vs. full total</th>
-<th style="text-align:right">Welch p vs. full</th>
+<th style="text-align:right"><strong>Mean total tokens ± SE</strong></th>
+<th style="text-align:right">Change vs. full</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Full prose</td>
-<td style="text-align:right">247.0</td>
-<td style="text-align:right">9.7</td>
-<td style="text-align:right">189.6</td>
 <td style="text-align:right"><strong>446.3 ± 11.2</strong></td>
 <td style="text-align:right">baseline</td>
-<td style="text-align:right">—</td>
 </tr>
 <tr>
 <td>Defined abbreviations</td>
-<td style="text-align:right">252.0</td>
-<td style="text-align:right">10.7</td>
-<td style="text-align:right">206.3</td>
 <td style="text-align:right"><strong>469.0 ± 12.3</strong></td>
 <td style="text-align:right">+22.7 (+5.1%)</td>
-<td style="text-align:right">0.188</td>
 </tr>
 <tr>
 <td>Undefined abbreviations</td>
-<td style="text-align:right">222.0</td>
-<td style="text-align:right">10.7</td>
-<td style="text-align:right">204.0</td>
 <td style="text-align:right"><strong>436.7 ± 13.8</strong></td>
 <td style="text-align:right">-9.6 (-2.2%)</td>
-<td style="text-align:right">0.596</td>
 </tr>
 <tr>
 <td>Concise language</td>
-<td style="text-align:right">158.0</td>
-<td style="text-align:right">14.4</td>
-<td style="text-align:right">178.2</td>
 <td style="text-align:right"><strong>350.6 ± 7.9</strong></td>
 <td style="text-align:right">-95.7 (-21.4%)</td>
-<td style="text-align:right">0.0000029</td>
 </tr>
 </tbody>
 </table></div>
-<p>For each non-full version, I used a two-sided Welch two-sample t-test on total tokens versus the 10 full-prose calls. Defined abbreviations were not distinguishable from full prose: <em>t</em>(17.9) = 1.37, <em>p</em> = 0.188. Undefined abbreviations were also not distinguishable: <em>t</em>(17.3) = -0.54, <em>p</em> = 0.596. Concise language was lower: <em>t</em>(16.2) = -6.98, <em>p</em> = 0.0000029. At a 0.05 threshold, only concise language is significant for this task. These are uncorrected exploratory comparisons of repeated runs on one frozen task, not a claim that the effect generalizes to every workload.</p>
+<p>For each non-full version, I used a two-sided Welch two-sample t-test on total tokens versus the 10 full-prose calls:</p>
+<ul>
+<li>Defined abbreviations: <em>t</em>(17.9) = 1.37, <em>p</em> = 0.188; not distinguishable from full prose.</li>
+<li>Undefined abbreviations: <em>t</em>(17.3) = -0.54, <em>p</em> = 0.596; not distinguishable from full prose.</li>
+<li>Concise language: <em>t</em>(16.2) = -6.98, <em>p</em> = 0.0000029; lower total-token use.</li>
+</ul>
+<p>At a 0.05 threshold, only concise language is significant for this task. These are uncorrected exploratory comparisons of repeated runs on one frozen task, not a claim that the effect generalizes to every workload.</p>
 <p>These are the exact four request bodies. The records and decision rule are identical; only the wording changes.</p>
 <h4>Full prose — 247 tokens</h4>
 <pre><code class="language-text">Review every customer support request. A customer support request qualifies only when all three rules hold:<br>1. Its priority level is at least 3.<br>2. Its response deadline is day 10 or earlier.<br>3. Its escalation status is exactly &quot;required&quot;.<br><br>Records:<br>- R01 — priority level: 5; response deadline: day 1; escalation status: required.<br>- R02 — priority level: 1; response deadline: day 30; escalation status: not required.<br>- R03 — priority level: 4; response deadline: day 4; escalation status: pending.<br>- R04 — priority level: 4; response deadline: day 28; escalation status: pending.<br>- R05 — priority level: 4; response deadline: day 20; escalation status: pending.<br>- R06 — priority level: 4; response deadline: day 21; escalation status: required.<br><br>Return only a JSON object of the form {&quot;answer&quot;: [&quot;R01&quot;, &quot;R02&quot;]}.<br>The answer must contain every qualifying record ID in ascending order and no others.</code></pre>

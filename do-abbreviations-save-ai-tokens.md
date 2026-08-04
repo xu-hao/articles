@@ -32,16 +32,22 @@ Here is one actual six-record support task. The model had to return IDs whose pr
 | R05 | 4 | day 20 | pending |
 | R06 | 4 | day 21 | required |
 
-Here are the measured totals for that exact task: the mean of its 10 corrected generation calls. Total-token entries are mean ± standard error; input counts are fixed because each condition reused the same request body. The defined version was 23% shorter in characters, but it used **22.7 more total tokens** than full prose because it also induced more thinking.
+Here are the measured totals for that exact task: the mean of its 10 corrected generation calls. Total-token entries are mean ± standard error. The defined version was 23% shorter in characters, but it used **22.7 more total tokens** than full prose.
 
-| Form | Input | Visible output | Thinking | **Total tokens (mean ± SE)** | Change vs. full total | Welch p vs. full |
-|---|---:|---:|---:|---:|---:|---:|
-| Full prose | 247.0 | 9.7 | 189.6 | **446.3 ± 11.2** | baseline | — |
-| Defined abbreviations | 252.0 | 10.7 | 206.3 | **469.0 ± 12.3** | +22.7 (+5.1%) | 0.188 |
-| Undefined abbreviations | 222.0 | 10.7 | 204.0 | **436.7 ± 13.8** | -9.6 (-2.2%) | 0.596 |
-| Concise language | 158.0 | 14.4 | 178.2 | **350.6 ± 7.9** | -95.7 (-21.4%) | 0.0000029 |
+| Form | **Mean total tokens ± SE** | Change vs. full |
+|---|---:|---:|
+| Full prose | **446.3 ± 11.2** | baseline |
+| Defined abbreviations | **469.0 ± 12.3** | +22.7 (+5.1%) |
+| Undefined abbreviations | **436.7 ± 13.8** | -9.6 (-2.2%) |
+| Concise language | **350.6 ± 7.9** | -95.7 (-21.4%) |
 
-For each non-full version, I used a two-sided Welch two-sample t-test on total tokens versus the 10 full-prose calls. Defined abbreviations were not distinguishable from full prose: *t*(17.9) = 1.37, *p* = 0.188. Undefined abbreviations were also not distinguishable: *t*(17.3) = -0.54, *p* = 0.596. Concise language was lower: *t*(16.2) = -6.98, *p* = 0.0000029. At a 0.05 threshold, only concise language is significant for this task. These are uncorrected exploratory comparisons of repeated runs on one frozen task, not a claim that the effect generalizes to every workload.
+For each non-full version, I used a two-sided Welch two-sample t-test on total tokens versus the 10 full-prose calls:
+
+- Defined abbreviations: *t*(17.9) = 1.37, *p* = 0.188; not distinguishable from full prose.
+- Undefined abbreviations: *t*(17.3) = -0.54, *p* = 0.596; not distinguishable from full prose.
+- Concise language: *t*(16.2) = -6.98, *p* = 0.0000029; lower total-token use.
+
+At a 0.05 threshold, only concise language is significant for this task. These are uncorrected exploratory comparisons of repeated runs on one frozen task, not a claim that the effect generalizes to every workload.
 
 These are the exact four request bodies. The records and decision rule are identical; only the wording changes.
 
