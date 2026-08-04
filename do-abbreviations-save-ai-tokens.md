@@ -32,6 +32,15 @@ Here is one actual six-record support task. The model had to return IDs whose pr
 | R05 | 4 | day 20 | pending |
 | R06 | 4 | day 21 | required |
 
+Here are the measured totals for that exact task: the mean of its 10 corrected generation calls. The defined version was 23% shorter in characters, but it used **22.7 more total tokens** than full prose because it also induced more thinking.
+
+| Form | Input | Visible output | Thinking | **Total tokens** | Change vs. full total |
+|---|---:|---:|---:|---:|---:|
+| Full prose | 247.0 | 9.7 | 189.6 | **446.3** | baseline |
+| Defined abbreviations | 252.0 | 10.7 | 206.3 | **469.0** | +22.7 (+5.1%) |
+| Undefined abbreviations | 222.0 | 10.7 | 204.0 | **436.7** | -9.6 (-2.2%) |
+| Concise language | 158.0 | 14.4 | 178.2 | **350.6** | -95.7 (-21.4%) |
+
 These are the exact four request bodies. The records and decision rule are identical; only the wording changes.
 
 #### Full prose — 247 tokens
@@ -117,16 +126,7 @@ Records:
 Return only {"answer": [record IDs]} with qualifying IDs in ascending order.
 ```
 
-The same task's token counts were:
-
-| Form | Instruction and field names | Gemini input tokens |
-|---|---|---:|
-| Full prose | `customer support request`, `priority level`, `response deadline`, `escalation status` | 247 |
-| Defined abbreviations | `CSR`, `PL`, `RD`, `ES`, with a four-line legend | 252 |
-| Undefined abbreviations | `CSR`, `PL`, `RD`, `ES`, without a legend | 222 |
-| Concise language | `score`, `day`, `state` | 158 |
-
-The defined version used fewer characters but **five more tokens** than full prose because the legend had not yet paid for itself. The concise version made the task both shorter and readable. [The appendix](abbreviation-experiment-appendix.html) contains all 32 frozen tasks and all 128 exact prompt variants.
+The concise version made the task both shorter and readable. [The appendix](abbreviation-experiment-appendix.html) contains all 32 frozen tasks and all 128 exact prompt variants.
 
 The variants were exact string substitutions: no condition lost a rule, changed a value, or reordered a record. Model, temperature, thinking level, output schema, and scorer stayed fixed. I ran each case-condition combination 10 times, for 1,280 corrected generation calls.
 

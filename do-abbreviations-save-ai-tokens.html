@@ -62,6 +62,53 @@
 </tr>
 </tbody>
 </table></div>
+<p>Here are the measured totals for that exact task: the mean of its 10 corrected generation calls. The defined version was 23% shorter in characters, but it used <strong>22.7 more total tokens</strong> than full prose because it also induced more thinking.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Form</th>
+<th style="text-align:right">Input</th>
+<th style="text-align:right">Visible output</th>
+<th style="text-align:right">Thinking</th>
+<th style="text-align:right"><strong>Total tokens</strong></th>
+<th style="text-align:right">Change vs. full total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Full prose</td>
+<td style="text-align:right">247.0</td>
+<td style="text-align:right">9.7</td>
+<td style="text-align:right">189.6</td>
+<td style="text-align:right"><strong>446.3</strong></td>
+<td style="text-align:right">baseline</td>
+</tr>
+<tr>
+<td>Defined abbreviations</td>
+<td style="text-align:right">252.0</td>
+<td style="text-align:right">10.7</td>
+<td style="text-align:right">206.3</td>
+<td style="text-align:right"><strong>469.0</strong></td>
+<td style="text-align:right">+22.7 (+5.1%)</td>
+</tr>
+<tr>
+<td>Undefined abbreviations</td>
+<td style="text-align:right">222.0</td>
+<td style="text-align:right">10.7</td>
+<td style="text-align:right">204.0</td>
+<td style="text-align:right"><strong>436.7</strong></td>
+<td style="text-align:right">-9.6 (-2.2%)</td>
+</tr>
+<tr>
+<td>Concise language</td>
+<td style="text-align:right">158.0</td>
+<td style="text-align:right">14.4</td>
+<td style="text-align:right">178.2</td>
+<td style="text-align:right"><strong>350.6</strong></td>
+<td style="text-align:right">-95.7 (-21.4%)</td>
+</tr>
+</tbody>
+</table></div>
 <p>These are the exact four request bodies. The records and decision rule are identical; only the wording changes.</p>
 <h4>Full prose — 247 tokens</h4>
 <pre><code class="language-text">Review every customer support request. A customer support request qualifies only when all three rules hold:<br>1. Its priority level is at least 3.<br>2. Its response deadline is day 10 or earlier.<br>3. Its escalation status is exactly &quot;required&quot;.<br><br>Records:<br>- R01 — priority level: 5; response deadline: day 1; escalation status: required.<br>- R02 — priority level: 1; response deadline: day 30; escalation status: not required.<br>- R03 — priority level: 4; response deadline: day 4; escalation status: pending.<br>- R04 — priority level: 4; response deadline: day 28; escalation status: pending.<br>- R05 — priority level: 4; response deadline: day 20; escalation status: pending.<br>- R06 — priority level: 4; response deadline: day 21; escalation status: required.<br><br>Return only a JSON object of the form {&quot;answer&quot;: [&quot;R01&quot;, &quot;R02&quot;]}.<br>The answer must contain every qualifying record ID in ascending order and no others.</code></pre>
@@ -71,39 +118,7 @@
 <pre><code class="language-text">Review every CSR. A CSR qualifies only when all three rules hold:<br>1. Its PL is at least 3.<br>2. Its RD is day 10 or earlier.<br>3. Its ES is exactly &quot;required&quot;.<br><br>Records:<br>- R01 — PL: 5; RD: day 1; ES: required.<br>- R02 — PL: 1; RD: day 30; ES: not required.<br>- R03 — PL: 4; RD: day 4; ES: pending.<br>- R04 — PL: 4; RD: day 28; ES: pending.<br>- R05 — PL: 4; RD: day 20; ES: pending.<br>- R06 — PL: 4; RD: day 21; ES: required.<br><br>Return only a JSON object of the form {&quot;answer&quot;: [&quot;R01&quot;, &quot;R02&quot;]}.<br>The answer must contain every qualifying record ID in ascending order and no others.</code></pre>
 <h4>Concise language — 158 tokens</h4>
 <pre><code class="language-text">Select every record satisfying all conditions:<br>score &gt;= 3; day &lt;= 10; state = &quot;required&quot;.<br><br>Records:<br>- R01: score=5; day=1; state=required.<br>- R02: score=1; day=30; state=not required.<br>- R03: score=4; day=4; state=pending.<br>- R04: score=4; day=28; state=pending.<br>- R05: score=4; day=20; state=pending.<br>- R06: score=4; day=21; state=required.<br><br>Return only {&quot;answer&quot;: [record IDs]} with qualifying IDs in ascending order.</code></pre>
-<p>The same task's token counts were:</p>
-<div class="table-wrap"><table>
-<thead>
-<tr>
-<th>Form</th>
-<th>Instruction and field names</th>
-<th style="text-align:right">Gemini input tokens</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Full prose</td>
-<td><code>customer support request</code>, <code>priority level</code>, <code>response deadline</code>, <code>escalation status</code></td>
-<td style="text-align:right">247</td>
-</tr>
-<tr>
-<td>Defined abbreviations</td>
-<td><code>CSR</code>, <code>PL</code>, <code>RD</code>, <code>ES</code>, with a four-line legend</td>
-<td style="text-align:right">252</td>
-</tr>
-<tr>
-<td>Undefined abbreviations</td>
-<td><code>CSR</code>, <code>PL</code>, <code>RD</code>, <code>ES</code>, without a legend</td>
-<td style="text-align:right">222</td>
-</tr>
-<tr>
-<td>Concise language</td>
-<td><code>score</code>, <code>day</code>, <code>state</code></td>
-<td style="text-align:right">158</td>
-</tr>
-</tbody>
-</table></div>
-<p>The defined version used fewer characters but <strong>five more tokens</strong> than full prose because the legend had not yet paid for itself. The concise version made the task both shorter and readable. <a href="abbreviation-experiment-appendix.html">The appendix</a> contains all 32 frozen tasks and all 128 exact prompt variants.</p>
+<p>The concise version made the task both shorter and readable. <a href="abbreviation-experiment-appendix.html">The appendix</a> contains all 32 frozen tasks and all 128 exact prompt variants.</p>
 <p>The variants were exact string substitutions: no condition lost a rule, changed a value, or reordered a record. Model, temperature, thinking level, output schema, and scorer stayed fixed. I ran each case-condition combination 10 times, for 1,280 corrected generation calls.</p>
 <h2>Discussion</h2>
 <h3>Most familiar shortenings saved zero tokens</h3>
