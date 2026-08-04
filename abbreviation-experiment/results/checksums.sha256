@@ -1,0 +1,4 @@
+77913afeaf175c6de8234246cda0280892be456e7a609c57be32833a9a892cd8  results/counts-gemini-3.5-flash-lite.jsonl
+b818d1f45b8622c3d605c0ea201868e2a0150da34817d97fb6b48f719898eac8  results/counts-gemini-3.6-flash.jsonl
+de350f9dca0a2f3db51e9e2f387e1f03abba055fd9acb20193701e6fef09697c  results/generation-gemini-3.6-flash.jsonl
+f109f15d1c900bf81abf4ec4566b87266e6262ac43b5f706f8b75aedf6af2b08  results/pilot-generation-gemini-3.6-flash-max512.jsonl

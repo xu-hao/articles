@@ -1,0 +1,11 @@
+*.jsonl
+summary.md
+manifest.json
+.env
+!.gitignore
+!checksums.sha256
+!counts-gemini-3.5-flash-lite.jsonl
+!counts-gemini-3.6-flash.jsonl
+!generation-gemini-3.6-flash.jsonl
+!pilot-generation-gemini-3.6-flash-max512.jsonl
+!summary.md
