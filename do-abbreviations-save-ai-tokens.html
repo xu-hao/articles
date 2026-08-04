@@ -1,26 +1,20 @@
 <html><head><meta charset="utf-8"><title>Do Abbreviations Save AI Tokens?</title><style>body{max-width:42em;margin:2em auto;padding:0 1em;font-family:Georgia,serif;line-height:1.6}pre{background:#f4f4f4;padding:1em;overflow-x:auto;font-size:14px}code{font-family:monospace}blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:1em;color:#444}.table-wrap{margin:1.25em 0;overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:100%;white-space:nowrap;font-size:.92em}th,td{border:1px solid #ccc;padding:.45em .6em;vertical-align:top}th{background:#f4f4f4}</style></head><body><h1>Do Abbreviations Save AI Tokens?</h1>
-<h2>1,288 tokenizer checks and 2,560 Gemini calls: common shortenings saved nothing, definitions took up to 16 uses to break even, and concise language won.</h2>
+<h2>A Gemini experiment: standard initialisms helped, familiar shortenings did not, and concise English won on cost.</h2>
 <!-- medium-topics: Artificial Intelligence, Large Language Models, Programming, Machine Learning, Software Development -->
-<p>I changed <code>configuration</code> to <code>config</code>, <code>documentation</code> to <code>docs</code>, <code>repository</code> to <code>repo</code>, and <code>application</code> to <code>app</code>.</p>
-<p>Gemini charged exactly the same number of input tokens for every one.</p>
-<p>Then I changed <code>authorization</code> to <code>authz</code>. The shorter version cost <strong>one token more</strong>.</p>
-<p>This is the problem with the most intuitive advice about LLM cost: models don't read characters. They read tokens, and tokenizers have already learned compact representations for many common words. A word can lose half its letters without losing a single token. An awkward abbreviation can be shorter to us and longer to the model.</p>
-<p>But I wanted the answer to the bigger question. If you aggressively abbreviate a complete prompt—not one word, but every repeated term—does it save input tokens? When you include the definitions, where is the break-even point? And after the model spends tokens understanding the shorthand, does the total bill actually go down?</p>
-<p>So I froze a corpus, ran 1,288 token-count requests across two Gemini models, and sent 2,560 generation requests through Gemini 3.6 Flash.</p>
-<p>The short answer: <strong>abbreviations saved input tokens. They did not produce a clear overall cost saving. Concise, readable language beat them by a mile.</strong></p>
-<h2>Four versions of the same prompt</h2>
-<p>The generation benchmark had 32 mechanically scored tasks: eight domains crossed with prompts containing 6, 12, 24, or 48 records. Each task asked Gemini to apply three rules and return the matching record IDs as JSON. The gold answers were computed in code; there was no LLM judge.</p>
-<p>Every case had four prompt variants:</p>
+<p>Abbreviations reduced Gemini input tokens, but they did <strong>not</strong> produce a reliable overall cost saving in this benchmark. Familiar shortenings such as <code>config</code>, <code>docs</code>, <code>repo</code>, and <code>app</code> usually saved nothing; standard initialisms such as <code>API</code> and <code>FAQ</code> did. Defining an alias took roughly 8–16 reuses to repay. Concise, readable language was the clear winner: it cut input tokens by 30.28% and total cost by 6.47%. The practical conclusion is simple: write clearly and concisely first; abbreviate only a repeated phrase whose exact token saving you have measured.</p>
+<h2>The experiment</h2>
+<p>I tested both isolated terms and complete prompts with Gemini. First, I counted 40 full-form/abbreviation pairs in three contexts, then measured the cost of defining and reusing aliases at 1, 2, 4, 8, 16, and 32 repetitions. That produced 644 token-count inputs, run on Gemini 3.6 Flash and repeated on Gemini 3.5 Flash-Lite. The two models returned the same count on every input.</p>
+<p>For the prompt experiment, I created 32 mechanically scored tasks: eight domains crossed with prompts containing 6, 12, 24, or 48 records. Each task asked Gemini to apply three rules and return matching record IDs as JSON. Gold answers came from code, not an LLM judge.</p>
+<p>Each task had four versions:</p>
 <ul>
 <li><strong>Full prose:</strong> <code>customer support request</code>, <code>priority level</code>, <code>response deadline</code>, <code>escalation status</code>.</li>
-<li><strong>Defined abbreviations:</strong> <code>CSR</code>, <code>PL</code>, <code>RD</code>, <code>ES</code>, plus a four-line legend.</li>
-<li><strong>Undefined abbreviations:</strong> the same abbreviations with no legend.</li>
-<li><strong>Concise language:</strong> a readable version using generic fields such as <code>score</code>, <code>day</code>, and <code>state</code>, with no acronym soup.</li>
+<li><strong>Defined abbreviations:</strong> <code>CSR</code>, <code>PL</code>, <code>RD</code>, and <code>ES</code>, plus a four-line legend.</li>
+<li><strong>Undefined abbreviations:</strong> the same aliases without the legend.</li>
+<li><strong>Concise language:</strong> readable generic fields such as <code>score</code>, <code>day</code>, and <code>state</code>, with no acronym soup.</li>
 </ul>
-<p>The causal variants came from exact string substitution. No condition lost a rule, changed a value, or reordered a record. The model, temperature, thinking level, output schema, and scorer stayed fixed. I ran every case-condition cell 10 times: 1,280 corrected generation calls.</p>
-<p>Before generation, I tested 40 full-form/abbreviation pairs in three contexts, then measured definition break-even at 1, 2, 4, 8, 16, and 32 repetitions. I ran all 644 count requests on Gemini 3.6 Flash and repeated them on Gemini 3.5 Flash-Lite.</p>
-<p>The two models returned the same count on <strong>all 644 inputs</strong>.</p>
-<h2>Most everyday shortenings saved zero tokens</h2>
+<p>The variants were exact string substitutions: no condition lost a rule, changed a value, or reordered a record. Model, temperature, thinking level, output schema, and scorer stayed fixed. I ran each case-condition combination 10 times, for 1,280 corrected generation calls.</p>
+<h2>Discussion</h2>
+<h3>Most familiar shortenings saved zero tokens</h3>
 <p>The lexical result split cleanly by abbreviation type:</p>
 <div class="table-wrap"><table>
 <thead>
@@ -63,8 +57,7 @@
 </tr>
 </tbody>
 </table></div>
-<p>Each row covers ten terms in three contexts. Standard initialisms did what you would hope: <code>frequently asked questions</code> became three tokens cheaper as <code>FAQ</code>; <code>application programming interface</code> saved two as <code>API</code>.</p>
-<p>The programmer-style shortenings mostly did nothing:</p>
+<p>Each row covers ten terms in three contexts. <code>Frequently asked questions</code> became three tokens cheaper as <code>FAQ</code>, and <code>application programming interface</code> saved two as <code>API</code>. But the programmer-style shortenings mostly did nothing:</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -121,16 +114,12 @@
 </tr>
 </tbody>
 </table></div>
-<p>This is why character counts cannot answer a token question. Frequent full words are often already vocabulary units. Rare strings like <code>authz</code> may be split apart.</p>
-<p>If you're shortening prompts by eye, you are optimizing the wrong representation.</p>
-<h2>A definition is a cover charge</h2>
-<p>An unexplained <code>API</code> may be fine. An invented <code>X4</code> needs a definition, and that definition has to be paid for before the first use saves anything.</p>
-<p>For each phrase I compared a prompt using the full form everywhere against a prompt that defined the alias once and reused it. Standard initialisms first became cheaper after a median of <strong>8 uses</strong>. Invented aliases needed <strong>16 uses</strong>.</p>
-<p>One alias, <code>X10</code>, never broke even. Its short form took the same number of tokens per occurrence as the full phrase, so the definition remained permanent overhead.</p>
-<p>Adding more lightly used abbreviations did not improve the economics. With ten invented aliases, the compressed prompt was still 29 tokens larger at eight uses per alias. It finally became 43 tokens smaller at 16 uses and 187 smaller at 32.</p>
-<p>The rule is not “abbreviate extensively.” It is: <strong>abbreviate a phrase only when its measured per-use saving will repay its definition.</strong></p>
-<h2>The legend lost on short prompts</h2>
-<p>The complete prompts showed the break-even curve directly:</p>
+<p>Character count is the wrong proxy. Common full words can already be single vocabulary units; an awkward abbreviation such as <code>authz</code> can split into more tokens.</p>
+<h3>Definitions are an upfront cost</h3>
+<p>An unexplained <code>API</code> may be fine. An invented <code>X4</code> needs a definition, and that definition must be repaid before the alias saves anything. Standard initialisms first became cheaper after a median of <strong>8 uses</strong>; invented aliases needed <strong>16 uses</strong>.</p>
+<p>One alias, <code>X10</code>, never broke even: its short form used the same number of tokens as the full phrase, so the definition remained permanent overhead. With ten invented aliases, the compressed prompt was still 29 tokens larger at eight uses per alias; it became 43 tokens smaller at 16 uses and 187 smaller at 32.</p>
+<h3>Prompt compression was real; cheaper total use was not</h3>
+<p>The complete prompts showed why a legend is costly on short tasks:</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -172,18 +161,8 @@
 </tr>
 </tbody>
 </table></div>
-<p>On six-record tasks, the defined-abbreviation prompt was larger than full prose. The legend broke even between 6 and 12 records, then became more valuable as the same field names repeated.</p>
-<p>Across all 32 cases, giving each case equal weight:</p>
-<ul>
-<li>Defined abbreviations reduced input tokens by <strong>4.27%</strong>.</li>
-<li>Undefined abbreviations reduced them by <strong>10.93%</strong>.</li>
-<li>Concise language reduced them by <strong>30.28%</strong>.</li>
-</ul>
-<p>So yes, extensive abbreviation can compress a prompt. But merely writing the prompt concisely compressed it nearly three times as much as unexplained abbreviations and seven times as much as defined ones.</p>
-<p>Then the model started thinking.</p>
-<h2>Input tokens were the cheap part</h2>
-<p>At the time of the experiment, Gemini 3.6 Flash cost $1.50 per million input tokens and $7.50 per million output tokens, with thinking tokens billed at the output rate. That five-to-one ratio matters. Save 50 input tokens, provoke 10 extra thought tokens, and the dollar saving is gone. (<a href="https://ai.google.dev/gemini-api/docs/pricing">Gemini pricing</a>, <a href="https://ai.google.dev/gemini-api/docs/tokens">token usage fields</a>)</p>
-<p>Average usage per call looked like this:</p>
+<p>Across all 32 tasks, weighted equally, defined abbreviations reduced input tokens by <strong>4.27%</strong>; undefined abbreviations reduced them by <strong>10.93%</strong>; concise language reduced them by <strong>30.28%</strong>. Abbreviations can compress a prompt, but concise writing did far more.</p>
+<p>Input tokens were also the cheap part. At the time of the experiment, Gemini 3.6 Flash listed input at $1.50 per million tokens and output—including thinking—at $7.50 per million. (<a href="https://ai.google.dev/gemini-api/docs/pricing">Gemini pricing</a>, <a href="https://ai.google.dev/gemini-api/docs/tokens">token usage fields</a>) Saving input can disappear if the model uses a few extra thought tokens.</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -230,8 +209,7 @@
 </tr>
 </tbody>
 </table></div>
-<p>If I simply pool every token, defined abbreviations were 0.7% cheaper than full prose, undefined abbreviations 1.2% cheaper, and concise language 10.3% cheaper.</p>
-<p>But pooling overweights the 48-record prompts because they consume most of the tokens. The benchmark's sampling unit was a task, so I also gave every task equal weight and bootstrapped across the 32 cases:</p>
+<p>Pooling all tokens makes defined abbreviations look 0.7% cheaper and undefined abbreviations 1.2% cheaper. But that overweights the largest prompts. With each task weighted equally and a case bootstrap:</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -258,39 +236,18 @@
 </tr>
 </tbody>
 </table></div>
-<p>The abbreviation intervals cross zero. This experiment cannot distinguish them from no cost change. Concise language is the only condition with a clear overall saving.</p>
-<p>Length explains the conflicting summaries. Defined abbreviations cost 8.6% more on six-record tasks and 4.7% more on twelve-record tasks, but about 3–4% less on the two longer sizes. The volume-weighted bill celebrates the large wins; the task-weighted analysis remembers the small losses.</p>
-<p><strong>Fewer input tokens and a lower bill are not the same result.</strong></p>
-<h2>I almost published a completely false accuracy finding</h2>
-<p>My first generation run appeared to show a behavioral tradeoff:</p>
-<ul>
-<li>Full prose: 81.56% correct.</li>
-<li>Defined abbreviations: 84.06%.</li>
-<li>Undefined abbreviations: 80.31%.</li>
-<li>Concise language: 79.69%.</li>
-</ul>
-<p>It looked like a story. Defined shorthand somehow helped, while aggressive concision hurt.</p>
-<p>The story was fake.</p>
-<p>I had set <code>max_output_tokens</code> to 512. The answer was a tiny JSON array, so 512 seemed generous. But in these Gemini 3.6 Flash calls, hidden thinking consumed the allowance before the model could finish its visible response. Every scored miss ended with <code>MAX_TOKENS</code>. Most responses were empty or partial JSON after using about 489 thought tokens. Eight responses happened to complete valid JSON at the cap and were scored correct, but they had the same finish reason.</p>
-<p>I preserved that 1,280-call pilot, amended the protocol, increased the uniform allowance to 2,048, and classified any future <code>MAX_TOKENS</code> separately from semantic failure.</p>
-<p>The corrected result was:</p>
-<p><strong>1,280 correct. Zero incorrect. Zero truncated. Zero API errors.</strong></p>
-<p>There was no abbreviation-quality tradeoff in these tasks. There was an output-budget bug wearing one as a costume.</p>
-<p>This side finding may be more operationally important than the abbreviation result: if malformed output is scored as wrong without checking the finish reason and thinking usage, a token cap can manufacture a model-quality regression from nothing.</p>
-<h2>What I would do in a real system</h2>
-<p>The experiment suggests a boring, measurable optimization order:</p>
+<p>Both abbreviation intervals cross zero, so this experiment cannot distinguish either from no overall cost change. Concise language is the only condition with a clear saving.</p>
+<h3>A measurement trap worth avoiding</h3>
+<p>My first 1,280-call pilot looked like a quality tradeoff: full prose was 81.56% correct, defined abbreviations 84.06%, undefined abbreviations 80.31%, and concise language 79.69%. That result was false. I had set <code>max_output_tokens</code> to 512; hidden thinking used the allowance before the visible JSON could finish. Every scored miss ended with <code>MAX_TOKENS</code>.</p>
+<p>I preserved the pilot, raised the uniform allowance to 2,048, and reran it. The corrected result was <strong>1,280 correct, zero incorrect, zero truncated, and zero API errors</strong>. There was no abbreviation-quality tradeoff in these tasks—only an output-budget bug. Check finish reasons and thinking usage before treating malformed output as a comprehension failure.</p>
+<h2>Actions</h2>
 <ol>
 <li><strong>Write concise, readable instructions first.</strong> It delivered the largest input reduction and the only clear overall cost reduction.</li>
-<li><strong>Count the exact request.</strong> Use the model's token-count endpoint; don't estimate from characters or word length.</li>
-<li><strong>Abbreviate repeated multi-token phrases, not familiar-looking long words.</strong> <code>FAQ</code> helped. <code>config</code>, <code>docs</code>, and <code>repo</code> did not.</li>
+<li><strong>Count the exact request.</strong> Use the model's token-count endpoint; do not estimate from characters or word length.</li>
+<li><strong>Abbreviate repeated multi-token phrases, not familiar-looking long words.</strong> <code>FAQ</code> helped; <code>config</code>, <code>docs</code>, and <code>repo</code> did not.</li>
 <li><strong>Charge the legend to the optimization.</strong> In this corpus, a defined alias needed roughly 8–16 uses before it won.</li>
 <li><strong>Measure total usage and dollars.</strong> Input, output, thinking, and cached tokens can have different prices.</li>
 <li><strong>Log finish reasons.</strong> A truncated response is not evidence that the model misunderstood the prompt.</li>
 </ol>
 <p>I would not turn a production prompt into <code>cfg usr req resp</code> because it looks compact. I would generate both versions, count both exact requests, and keep the shorthand only if it reduces measured cost on the actual workload without moving the quality distribution.</p>
-<h2>The answer</h2>
-<p>Do extensive abbreviations save tokens?</p>
-<p><strong>Sometimes.</strong> Standard initialisms reliably compressed multiword phrases. Most everyday shortenings saved nothing. Definitions imposed a cover charge that took 8–16 reuses to repay. Across realistic prompts, defined shorthand cut input by 4.27%, but that did not become a clear cost reduction once thinking was included.</p>
-<p>The best compression technique in the experiment was not a private language of acronyms. It was editing.</p>
-<p>Everything is reproducible—the frozen corpus, prompts, runner, protocol amendments, result checksums, and the discarded pilot—at <a href="https://github.com/xu-hao/articles/tree/main/abbreviation-experiment">github.com/xu-hao/articles/tree/main/abbreviation-experiment</a>. I planned 20 corrected repetitions per cell but stopped at 10 after the invalid pilot consumed the original budget; that post-data amendment and its implications are documented in full. Total generation usage was $8.99 at paid list prices, including the discarded pilot.</p>
-<p>Count the tokens. Count the definitions. Count the thinking. Then decide whether the abbreviations are doing anything besides making the prompt harder for humans to read.</p></body></html>
+<p>Everything is reproducible—the frozen corpus, prompts, runner, protocol amendments, result checksums, and discarded pilot—at <a href="https://github.com/xu-hao/articles/tree/main/abbreviation-experiment">github.com/xu-hao/articles/tree/main/abbreviation-experiment</a>. I planned 20 corrected repetitions per cell but stopped at 10 after the invalid pilot consumed the original budget; the amendment and its implications are documented there. Total generation usage was $8.99 at paid list prices, including the discarded pilot.</p></body></html>
