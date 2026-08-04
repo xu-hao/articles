@@ -8,7 +8,7 @@ Abbreviations reduced Gemini input tokens, but they did **not** produce a reliab
 
 ## The experiment
 
-I tested both isolated terms and complete prompts with Gemini. First, I counted 40 full-form/abbreviation pairs in three contexts, then measured the cost of defining and reusing aliases at 1, 2, 4, 8, 16, and 32 repetitions. That produced 644 token-count inputs, run on Gemini 3.6 Flash and repeated on Gemini 3.5 Flash-Lite. The two models returned the same count on every input.
+I tested both isolated terms and complete prompts with Gemini. First, I counted 40 full-form/abbreviation pairs in three contexts, then measured the cost of defining and reusing aliases at 1, 2, 4, 8, 16, and 32 repetitions. Those 644 calls went only to Gemini's token-count endpoint: it deterministically tokenizes an input request and returns its input-token count; it does not generate an answer or use thinking tokens. I ran the same 644 requests on Gemini 3.6 Flash and Gemini 3.5 Flash-Lite. The two count endpoints returned the same input-token count for every request.
 
 For the prompt experiment, I created 32 mechanically scored tasks: eight domains crossed with prompts containing 6, 12, 24, or 48 records. Each task asked Gemini to apply three rules and return matching record IDs as JSON. Gold answers came from code, not an LLM judge.
 
@@ -136,7 +136,7 @@ Return only {"answer": [record IDs]} with qualifying IDs in ascending order.
 
 The concise version made the task both shorter and readable. [The appendix](abbreviation-experiment-appendix.html) contains all 32 frozen tasks and all 128 exact prompt variants.
 
-The variants were exact string substitutions: no condition lost a rule, changed a value, or reordered a record. Model, temperature, thinking level, output schema, and scorer stayed fixed. I ran each case-condition combination 10 times, for 1,280 corrected generation calls.
+The variants were exact string substitutions: no condition lost a rule, changed a value, or reordered a record. Model, temperature, thinking level, output schema, and scorer stayed fixed. This was separate from token counting: I ran each case-condition combination through the generation endpoint 10 times, for 1,280 corrected generation calls. Those runs can vary in visible output and thinking-token use.
 
 ## Discussion
 
