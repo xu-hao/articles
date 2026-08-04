@@ -32,7 +32,92 @@ Here is one actual six-record support task. The model had to return IDs whose pr
 | R05 | 4 | day 20 | pending |
 | R06 | 4 | day 21 | required |
 
-The records and rules did not change. Only the wording did:
+These are the exact four request bodies. The records and decision rule are identical; only the wording changes.
+
+#### Full prose — 247 tokens
+
+```text
+Review every customer support request. A customer support request qualifies only when all three rules hold:
+1. Its priority level is at least 3.
+2. Its response deadline is day 10 or earlier.
+3. Its escalation status is exactly "required".
+
+Records:
+- R01 — priority level: 5; response deadline: day 1; escalation status: required.
+- R02 — priority level: 1; response deadline: day 30; escalation status: not required.
+- R03 — priority level: 4; response deadline: day 4; escalation status: pending.
+- R04 — priority level: 4; response deadline: day 28; escalation status: pending.
+- R05 — priority level: 4; response deadline: day 20; escalation status: pending.
+- R06 — priority level: 4; response deadline: day 21; escalation status: required.
+
+Return only a JSON object of the form {"answer": ["R01", "R02"]}.
+The answer must contain every qualifying record ID in ascending order and no others.
+```
+
+#### Defined abbreviations — 252 tokens
+
+```text
+Abbreviation legend:
+- CSR = customer support request
+- PL = priority level
+- RD = response deadline
+- ES = escalation status
+
+Review every CSR. A CSR qualifies only when all three rules hold:
+1. Its PL is at least 3.
+2. Its RD is day 10 or earlier.
+3. Its ES is exactly "required".
+
+Records:
+- R01 — PL: 5; RD: day 1; ES: required.
+- R02 — PL: 1; RD: day 30; ES: not required.
+- R03 — PL: 4; RD: day 4; ES: pending.
+- R04 — PL: 4; RD: day 28; ES: pending.
+- R05 — PL: 4; RD: day 20; ES: pending.
+- R06 — PL: 4; RD: day 21; ES: required.
+
+Return only a JSON object of the form {"answer": ["R01", "R02"]}.
+The answer must contain every qualifying record ID in ascending order and no others.
+```
+
+#### Undefined abbreviations — 222 tokens
+
+```text
+Review every CSR. A CSR qualifies only when all three rules hold:
+1. Its PL is at least 3.
+2. Its RD is day 10 or earlier.
+3. Its ES is exactly "required".
+
+Records:
+- R01 — PL: 5; RD: day 1; ES: required.
+- R02 — PL: 1; RD: day 30; ES: not required.
+- R03 — PL: 4; RD: day 4; ES: pending.
+- R04 — PL: 4; RD: day 28; ES: pending.
+- R05 — PL: 4; RD: day 20; ES: pending.
+- R06 — PL: 4; RD: day 21; ES: required.
+
+Return only a JSON object of the form {"answer": ["R01", "R02"]}.
+The answer must contain every qualifying record ID in ascending order and no others.
+```
+
+#### Concise language — 158 tokens
+
+```text
+Select every record satisfying all conditions:
+score >= 3; day <= 10; state = "required".
+
+Records:
+- R01: score=5; day=1; state=required.
+- R02: score=1; day=30; state=not required.
+- R03: score=4; day=4; state=pending.
+- R04: score=4; day=28; state=pending.
+- R05: score=4; day=20; state=pending.
+- R06: score=4; day=21; state=required.
+
+Return only {"answer": [record IDs]} with qualifying IDs in ascending order.
+```
+
+The same task's token counts were:
 
 | Form | Instruction and field names | Gemini input tokens |
 |---|---|---:|
@@ -41,7 +126,7 @@ The records and rules did not change. Only the wording did:
 | Undefined abbreviations | `CSR`, `PL`, `RD`, `ES`, without a legend | 222 |
 | Concise language | `score`, `day`, `state` | 158 |
 
-The defined version used fewer characters but **five more tokens** than full prose because the legend had not yet paid for itself. The concise version made the task both shorter and readable.
+The defined version used fewer characters but **five more tokens** than full prose because the legend had not yet paid for itself. The concise version made the task both shorter and readable. [The appendix](abbreviation-experiment-appendix.html) contains all 32 frozen tasks and all 128 exact prompt variants.
 
 The variants were exact string substitutions: no condition lost a rule, changed a value, or reordered a record. Model, temperature, thinking level, output schema, and scorer stayed fixed. I ran each case-condition combination 10 times, for 1,280 corrected generation calls.
 

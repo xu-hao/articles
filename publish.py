@@ -32,6 +32,7 @@ STYLE = (
     "pre{background:#f4f4f4;padding:1em;overflow-x:auto;font-size:14px}"
     "code{font-family:monospace}"
     "blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:1em;color:#444}"
+    "details{margin:.75em 0}summary{cursor:pointer;font-weight:bold}details details{margin-left:.75em}"
     ".table-wrap{margin:1.25em 0;overflow-x:auto}"
     "table{border-collapse:collapse;width:100%;min-width:100%;white-space:nowrap;font-size:.92em}"
     "th,td{border:1px solid #ccc;padding:.45em .6em;vertical-align:top}"
@@ -126,6 +127,7 @@ def main():
     ap.add_argument("markdown", type=Path)
     ap.add_argument("--desc", default="", help="index.html blurb for a new article")
     ap.add_argument("--no-push", action="store_true", help="render only")
+    ap.add_argument("--no-index", action="store_true", help="do not add an index entry")
     args = ap.parse_args()
 
     md_path = args.markdown.resolve()
@@ -135,7 +137,9 @@ def main():
     out.write_text(page)
     print(f"rendered {out.name}: {title}")
 
-    added = ensure_index_entry(slug, title, args.desc or slug.replace("-", " "))
+    added = False
+    if not args.no_index:
+        added = ensure_index_entry(slug, title, args.desc or slug.replace("-", " "))
     if added:
         print("added index.html entry" + ("" if args.desc else " (edit the blurb!)"))
 
