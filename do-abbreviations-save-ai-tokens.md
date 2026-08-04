@@ -1,4 +1,4 @@
-# I Replaced Everything With Abbreviations to Save AI Tokens. It Barely Worked.
+# Do Abbreviations Save AI Tokens?
 
 ## 1,288 tokenizer checks and 2,560 Gemini calls: common shortenings saved nothing, definitions took up to 16 uses to break even, and concise language won.
 

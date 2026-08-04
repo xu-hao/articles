@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """Render an article for GitHub Pages and hand off to the Medium import tool.
 
 Usage:
@@ -21,16 +21,24 @@ import time
 import urllib.request
 from pathlib import Path
 
+from markdown_it import MarkdownIt
+
 REPO_DIR = Path(__file__).resolve().parent
 SITE_URL = "https://xu-hao.github.io/articles"
 PAGES_API = "repos/xu-hao/articles/pages/builds/latest"
 
 STYLE = (
-    "body{max-width:42em;margin:2em auto;font-family:Georgia,serif;line-height:1.6}"
+    "body{max-width:42em;margin:2em auto;padding:0 1em;font-family:Georgia,serif;line-height:1.6}"
     "pre{background:#f4f4f4;padding:1em;overflow-x:auto;font-size:14px}"
     "code{font-family:monospace}"
     "blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:1em;color:#444}"
+    ".table-wrap{margin:1.25em 0;overflow-x:auto}"
+    "table{border-collapse:collapse;width:100%;min-width:100%;white-space:nowrap;font-size:.92em}"
+    "th,td{border:1px solid #ccc;padding:.45em .6em;vertical-align:top}"
+    "th{background:#f4f4f4}"
 )
+
+MARKDOWN = MarkdownIt("commonmark").enable("table")
 
 
 def esc_title(text):
@@ -52,13 +60,14 @@ def postprocess(body):
             out.append(p.replace("\n</code>", "</code>").replace("\n", "<br>"))
         else:
             out.append(p.replace("&quot;", '"'))
-    return "".join(out)
+    body = "".join(out)
+    return body.replace("<table>", '<div class="table-wrap"><table>').replace(
+        "</table>", "</table></div>"
+    )
 
 
 def render(md_path):
-    body = subprocess.run(
-        ["markdown-it", str(md_path)], check=True, capture_output=True, text=True
-    ).stdout.rstrip("\n")
+    body = MARKDOWN.render(md_path.read_text()).rstrip("\n")
     body = postprocess(body)
     m = re.search(r"<h1>(.*?)</h1>", body, flags=re.S)
     if not m:
