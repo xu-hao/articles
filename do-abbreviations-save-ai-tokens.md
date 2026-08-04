@@ -19,6 +19,30 @@ Each task had four versions:
 - **Undefined abbreviations:** the same aliases without the legend.
 - **Concise language:** readable generic fields such as `score`, `day`, and `state`, with no acronym soup.
 
+### A concrete task
+
+Here is one actual six-record support task. The model had to return IDs whose priority was at least 3, response deadline was day 10 or earlier, and escalation status was `required`. The correct answer was `{"answer": ["R01"]}`.
+
+| ID | Priority level | Response deadline | Escalation status |
+|---|---:|---:|---|
+| R01 | 5 | day 1 | required |
+| R02 | 1 | day 30 | not required |
+| R03 | 4 | day 4 | pending |
+| R04 | 4 | day 28 | pending |
+| R05 | 4 | day 20 | pending |
+| R06 | 4 | day 21 | required |
+
+The records and rules did not change. Only the wording did:
+
+| Form | Instruction and field names | Gemini input tokens |
+|---|---|---:|
+| Full prose | `customer support request`, `priority level`, `response deadline`, `escalation status` | 247 |
+| Defined abbreviations | `CSR`, `PL`, `RD`, `ES`, with a four-line legend | 252 |
+| Undefined abbreviations | `CSR`, `PL`, `RD`, `ES`, without a legend | 222 |
+| Concise language | `score`, `day`, `state` | 158 |
+
+The defined version used fewer characters but **five more tokens** than full prose because the legend had not yet paid for itself. The concise version made the task both shorter and readable.
+
 The variants were exact string substitutions: no condition lost a rule, changed a value, or reordered a record. Model, temperature, thinking level, output schema, and scorer stayed fixed. I ran each case-condition combination 10 times, for 1,280 corrected generation calls.
 
 ## Discussion
